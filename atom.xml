@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>baitouwei</title>
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://www.baitouwei.com/"/>
+  <updated>2016-04-07T10:29:49.000Z</updated>
+  <id>http://www.baitouwei.com/</id>
+  
+  <author>
+    <name>baitouwei</name>
+    <email>yangcaitao@gmail.com</email>
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Android 系统启动流程</title>
+    <link href="http://www.baitouwei.com/2016/04/07/Android-%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/"/>
+    <id>http://www.baitouwei.com/2016/04/07/Android-系统启动流程/</id>
+    <published>2016-04-07T09:34:55.000Z</published>
+    <updated>2016-04-07T10:29:49.000Z</updated>
+    
+    <content type="html">&lt;blockquote&gt;
+&lt;p&gt;基于Android 6.0 源码&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;下面主要是从 Framework 层开始分析 Android 的启动过程，ZygoteInit.main() 是系统调用的第一个 Java 函数，这里是 c 到 java 的入口，分析从这里开始，整个流程如下：&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;&lt;img src=&quot;/image/android_system_start.png&quot; alt=&quot;android_start&quot;&gt;&lt;/p&gt;
+&lt;p&gt;Ps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Zygote进程是Android系统的首个Java进程，Zygote是所有Java进程的父进程，init 进程 fork 出 Zygote进程（）。&lt;/li&gt;
+&lt;li&gt;System Server是Zygote孵化的第一个进程，也是上层framework的运行载体，System Server进程：负责启动和管理整个Java framework，包含ActivityManager，PowerManager等服务。System Server进程由 Zygote进程fork出来。&lt;/li&gt;
+&lt;li&gt;Zygote进程接下来会孵化出的第一个App进程是Launcher，这是用户看到的桌面App；Zygote进程还会创建Browser，Phone，Email等App进程，每个App至少运行在一个进程上。
+所有的App进程都是由Zygote进程fork生成的。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;附录：&lt;/h3&gt;
+&lt;h4&gt;服务分类&lt;/h4&gt;
+&lt;h4&gt;分类1&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;引导服务：ActivityManagerService、PowerManagerService、LightsService、DisplayManagerService、PackageManagerService、UserManagerService、SensorService共7项服务；&lt;/li&gt;
+&lt;li&gt;核心服务：BatteryService、UsageStatsService、WebViewUpdateService共3项服务；&lt;/li&gt;
+&lt;li&gt;其他服务：AlarmManagerService、VibratorService等共70多项服务。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;分类2&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;重量级服务：ActivityManagerService、PackageManagerService、WindowManagerService&lt;/li&gt;
+&lt;li&gt;功耗相关：PowerManagerService、BatteryService、BatteryStatsService、DreamManagerService&lt;/li&gt;
+&lt;li&gt;统计调度相关：DropBoxManagerService、SamplingProfilerService、UsageStatsService、DiskStatsService、SchedulingPolicyService、DeviceStorageMonitorService、AlarmManagerService、DeviceIdleController、DockObserver、ThermalObserver、JobSchedulerService、AccessibilityManagerService&lt;/li&gt;
+&lt;li&gt;UI相关：DisplayManagerService、LightsService、GraphicsStatsService、StatusBarManagerService、NotificationManagerService、WallpaperManagerService、UiModeManagerService、AppWidgetService、LauncherAppsService、TextServicesManagerService、ContentService、LockSettingsService、InputManagerService、InputMethodManagerServiceMountService、FingerprintService、TvInputManagerService&lt;/li&gt;
+&lt;li&gt;网络相关：NetworkManagementService、NetworkScoreService、NetworkStatsService、NetworkPolicyManagerService、ConnectivityService、BluetoothService、WifiP2pService、WifiService、WifiScanningService、EthernetService、WebViewUpdateService&lt;/li&gt;
+&lt;li&gt;Media相关：AudioService、MediaRouterService、VoiceInteractionManagerService、MediaProjectionManagerService、MediaSessionService、&lt;/li&gt;
+&lt;li&gt;设备相关：DevicePolicyManagerService、PrintManagerService、BackupManagerService、UserManagerService、AccountManagerService、TrustManagerService、SensorService、LocationManagerService、VibratorService、CountryDetectorService、GestureLauncherService、PersistentDataBlockService、ClipboardService&lt;/li&gt;
+&lt;li&gt;其他：TelephonyRegistry、TelecomLoaderService、NsdService、UpdateLockService、SerialService、SearchManagerService、CommonTimeManagementService、AssetAtlasService、ConsumerIrService、MidiServiceCameraService、TwilightService、RestrictionsManagerService、MmsServiceBroker、RttService、UsbService。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;参考 Link：&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://gityuan.com/2016/01/30/android-boot/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;blockquote&gt;
+&lt;p&gt;基于Android 6.0 源码&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;下面主要是从 Framework 层开始分析 Android 的启动过程，ZygoteInit.main() 是系统调用的第一个 Java 函数，这里是 c 到 java 的入口，分析从这里开始，整个流程如下：&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Android" scheme="http://www.baitouwei.com/tags/Android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ASwipeRefresh</title>
+    <link href="http://www.baitouwei.com/2015/11/13/ASwipeRefresh/"/>
+    <id>http://www.baitouwei.com/2015/11/13/ASwipeRefresh/</id>
+    <published>2015-11-12T16:23:35.000Z</published>
+    <updated>2015-11-16T00:45:55.000Z</updated>
+    
+    <content type="html">&lt;p&gt;之前在做项目的时候，项目里面的下拉刷新控件是一个直接继承 ListView 实现的 PullToRefreshListView。由于是直接集成 ListView 实现的，所以只能在使用 ListView 的场景下才能使用，而且不能很方便的实现多种类型的下拉刷新方式，所以我就写了一个下拉刷新的控件 &lt;a href=&quot;https://github.com/baitouwei/ASwipeRefresh&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;ASwipeRefresh&lt;/a&gt;。这个控件主要实现了两件功能：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;支持自定义下拉刷新的 Header 和 上拉加载更多的 Footer&lt;/li&gt;
+&lt;li&gt;支持自定义 Header 和 Footer 的滑出方式&lt;/li&gt;
+&lt;/ol&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;这两个功能是我认为比较重要的功能，因为通过组合上面提到的 1 和 2 就可以实现现在的大多数下拉刷新方式。对于现在用的比较多的下拉刷新方式，可以将其分为 4 种类型。一个下拉刷新控件可以分为 Header，Content，和 Footer 三部分，而这四种不同类型的刷新方式之间的主要不同点就是手指拖动的对应的 Header，Content 或 Footer 是否会滑动和这三个 View 在层级（也就是 Z 轴）上的关系。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/image/header_content_footer.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;按常见程度排序它们分别是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Normal refresh,普通下拉刷新&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/image/normal_refresh.gif&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ol&gt;
+&lt;li&gt;Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是&lt;strong&gt;同步&lt;/strong&gt;滑动的（即滑动的距离&lt;strong&gt;相等&lt;/strong&gt;）。&lt;/li&gt;
+&lt;li&gt;Content 和 Header，Footer 三者在同一层上（即在 Z 轴上是相等的）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Drawer refresh,抽屉式下拉刷新&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/image/drawer_refresh.gif&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ol&gt;
+&lt;li&gt;Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是&lt;strong&gt;不同步&lt;/strong&gt;滑动的（即滑动的距离&lt;strong&gt;不相等&lt;/strong&gt;），一般常见为 Header 或 Footer 不滑动。&lt;/li&gt;
+&lt;li&gt;Content 是在 Header 和 Footer 的上一层视图（即 Content Z 轴上是&lt;strong&gt;最大&lt;/strong&gt;的，Z 轴值大的会覆盖住 Z 轴值小的视图）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Material refresh&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/image/material_refresh.gif&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;因为这种下拉刷新的方式我最先是在 Google 的 Lollipop 上看到的，所以就命名为Material refresh。这种刷新方式和上面的 Drawer refresh 很类似，区别就是 Header 或 Footer 的 Z 轴值比 Content 的大而且 Content 不会滑动。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是&lt;strong&gt;不同步&lt;/strong&gt;滑动的（即滑动的距离&lt;strong&gt;不相等&lt;/strong&gt;），一般常见为 Content &lt;strong&gt;不滑动&lt;/strong&gt;。&lt;/li&gt;
+&lt;li&gt;Content 是在 Header 和 Footer 的上一层视图（即 Content Z 轴上是&lt;strong&gt;最小&lt;/strong&gt;的，Z 轴值大的会覆盖住 Z 轴值小的视图）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Side in Refresh&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/image/side_in_refresh.gif&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;这种下拉刷新和 Material refresh 类似，区别就是 Header 或 Footer 改成了由侧面滑入。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是&lt;strong&gt;不同步&lt;/strong&gt;滑动的（即滑动的距离&lt;strong&gt;不相等&lt;/strong&gt;），一般常见为 Content &lt;strong&gt;不滑动&lt;/strong&gt;。&lt;/li&gt;
+&lt;li&gt;Content 是在 Header 和 Footer 的上一层视图（即 Content Z 轴上是&lt;strong&gt;最小&lt;/strong&gt;的，Z 轴值大的会覆盖住 Z 轴值小的视图）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;所以这样看来的话，一个可以适应以上所有下拉刷新场景的控件，要满足以下功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;可以自定义 Header，Footer，Content 之间的层级关系（也就是 Z 轴的值）。在　ASwipeRefresh 中对应的是 &lt;code&gt;LayoutLayer&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;可以自定义 Header，Footer 从哪个方向滑动出来，同时还要可以自定义 Header，Footer的初始位置。在　ASwipeRefresh 中对应的分别是&lt;code&gt;LayoutDirection&lt;/code&gt;,&lt;code&gt;OffsetOrientation&lt;/code&gt;，&lt;/li&gt;
+&lt;li&gt;可以自定义 Header，Footer，Content 是否可以滑动。在　ASwipeRefresh 中对应的是 &lt;code&gt;parallaxFactor&lt;/code&gt; ，&lt;code&gt;parallaxFactor&lt;/code&gt; 是用来设置滑动时候对应 View 的视差因数的，这里只要设置为 0，对应的 View 也就不会滑动了&lt;/li&gt;
+&lt;li&gt;当然还要可以自定义 Header 和 Footer，这里主要是把当前 ASwipeRefresh 滑动的 percent 和 status 传递过去。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;除此之外，我还把是否可以进行刷新通过回调 &lt;code&gt;isReadyToRefresh&lt;/code&gt; 和 &lt;code&gt;isReadyToLoadMore&lt;/code&gt; 暴露出来，这样就可以自定义滑动到什么位置才进行刷新。不过现在这个控件还是有缺点的，自动刷新那里处理的不是很好，由于不能缺点一个 View 什么时候已经 ready，所以找不到合适的位置去自动调用下拉刷新，现在的作法通过延时来实现，但其实很不好，无法保证能自动下拉成功，所以要实现自动下拉刷新的话，建议在外部合适的位置手动调用 &lt;code&gt;refreshStart&lt;/code&gt;&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前在做项目的时候，项目里面的下拉刷新控件是一个直接继承 ListView 实现的 PullToRefreshListView。由于是直接集成 ListView 实现的，所以只能在使用 ListView 的场景下才能使用，而且不能很方便的实现多种类型的下拉刷新方式，所以我就写了一个下拉刷新的控件 &lt;a href=&quot;https://github.com/baitouwei/ASwipeRefresh&quot;&gt;ASwipeRefresh&lt;/a&gt;。这个控件主要实现了两件功能：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;支持自定义下拉刷新的 Header 和 上拉加载更多的 Footer&lt;/li&gt;
+&lt;li&gt;支持自定义 Header 和 Footer 的滑出方式&lt;/li&gt;
+&lt;/ol&gt;
+    
+    </summary>
+    
+    
+      <category term="code" scheme="http://www.baitouwei.com/tags/code/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>okio分析</title>
+    <link href="http://www.baitouwei.com/2015/01/08/okio/"/>
+    <id>http://www.baitouwei.com/2015/01/08/okio/</id>
+    <published>2015-01-08T13:58:58.000Z</published>
+    <updated>2015-11-16T00:56:25.000Z</updated>
+    
+    <content type="html">&lt;p&gt;本篇分析基于&lt;a href=&quot;https://github.com/square/okio&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Okio&lt;/a&gt;1.2.0
+Okio是一个对原有的&lt;code&gt;java.io&lt;/code&gt;和&lt;code&gt;java.nio&lt;/code&gt;进行改进的IO库，使IO操作更加高效和方便。Okio的高效主要体现在三个方面：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一它对数据进行了&lt;strong&gt;&lt;em&gt;分块处理&lt;/em&gt;&lt;/strong&gt;，这样在大数据IO的时候可以以块为单位进行IO，这可以提高IO的吞吐率。&lt;/li&gt;
+&lt;li&gt;二它对这些数据块使用&lt;strong&gt;&lt;em&gt;链表&lt;/em&gt;&lt;/strong&gt;进行管理，这可以仅通过移动“指针”就进行数据的管理，而不用真正去处理数据，而且对扩容来说也十分方便。&lt;/li&gt;
+&lt;li&gt;三对闲置的块进行管理，通过一个块池（SegmentPool）的管理，避免系统GC和申请byte时的zero-fill。&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+其他的还有一些小细节上的优化，比如如果你把一个UTF-8的String转为ByteString，ByteString会保留一份对原来String的引用，这样当你下次
+需要decode这个String时，程序通过保留的引用直接返回对应的String，从而避免了转码过程。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Okio的方便主要体现在，它对数据的读取写入进行了封装，调用者可以十分方便的进行各种值(string,short,int,hex,utf-8,base64等等)的转化，还有一点就是它为所有的Source和Sink提供了超时操作，这在Java原生的IO里是没有的。&lt;/p&gt;
+&lt;p&gt;###Okio几个基础的类和接口：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;类Segment
+一个Segment相当于一个数据块（由一个byte数组构成），一般存在于一个双向循环队列（也就是buffer）或单链表（也就是SegmentPool）中,通过pop()和push(Segment segment)方法可以Segment进行入队和出队操作。Segment部分重要字段如下：&lt;/p&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; SIZE：Segment大小，&lt;span class=&quot;number&quot;&gt;2&lt;/span&gt;kb&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; pos：指向下一个可读的&lt;span class=&quot;keyword&quot;&gt;byte&lt;/span&gt;	&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; limit：指向下一个可写的&lt;span class=&quot;keyword&quot;&gt;byte&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Segment next：相当于链表的指针，指向下一个Segment&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Segment prev：相当于链表的指针，指向上一个Segment&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;类SegmentPool	
+一个Segment池，由一个单向链表构成。该池负责Segment的回收和闲置Segment的管理，一般Segment都是从该池获取的。该池是线程安全的。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;接口Sink，BufferedSink	
+Sink和java.io中的OutputStream类似，BufferedSink是一个对Sink进行扩展的接口。使用OutputStream时，在传输不同的数据是需要对OutputStream进行不同的包装，比如用DataOutputStream进行原始数据的IO，用BufferedOutputStream进行带缓存的数据IO，用OutputStreamWriter进行字符编码。对于Sink来说，只需要使用BufferedSink就可以实现以上所有的情况。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;接口Source和BufferedSource
+Source和java.io中的InputStream类似，BufferedSource是一个对Source进行扩展的接口。使用InputStream时，在传输不同的数据是需要对InputStream进行不同的包装，比如用DataInputStream进行原始数据的IO，用BufferedInputStream进行带缓存的数据IO，用OutputStreamReader进行字符编码。对于Source来说，只需要使用BufferedSource就可以实现以上所有的情况。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;java.io是由于使用了装饰者模式，才导致了不同的Stream操作需要一层包一层，而Okio没有在这里没有使用装饰者模式，也就不会出现一大堆类的情况。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;类Buffer
+Buffer是一个不固定大小的byte序列（由一个节点为Segment的&lt;strong&gt;&lt;em&gt;双向循环队列链表&lt;/em&gt;&lt;/strong&gt;构成），它充当Sink、Source、InputStream和OutputStream间的高效缓存区，由于Buffer实现了BufferedSource和BufferedSink这两个接口，所以可以很方便的对其进行IO操作。Buffer在多线程编程里很有用，比如一个负责网络的线程可以通过这种方式和工作线程进行数据交换，但是又不发生数据的复制。&lt;/li&gt;
+&lt;li&gt;类ByteString
+ByteString是一个固定大小的byte序列（由一个byte数组构成）。String是Java经常使用到的一个基本类型，ByteString对String进行了封装，为byte和String间的转换和String不同值间的转换（UTF-8编解码，Hex编解码，Base64编解码，ASCIll编解码）提供了十分方便的操作。&lt;/li&gt;
+&lt;li&gt;类AsyncTimeout
+AsyncTimeout为所有的Source和Sink提供了超时功能，Java原生的IO并没有超时功能，而AsyncTimeout填补了这点。AsyncTimeout的实现原理是：AsyncTimeout相当于一个节点，每个节点都带有tiemout信息，程序维护一条由AsyncTimeout节点组成&lt;strong&gt;&lt;em&gt;优先队列链表&lt;/em&gt;&lt;/strong&gt;（剩余超时时间越小的排越前），然后通过后台的一个守护线程，不断的去轮询这条链表，如果对应节点超时就调用Interrupted进行中断，否则调用wait进行等待。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;###Okio高效在哪里&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;前面说过Okio之所以高效是因为在底层的数据结构上，它维护了一个由Segment构成的链表循环队列，一个Segment相当于一个数据块。这样的好处很明显。因为在一块数据块的进行IO的过程中是没有中断的，相比于每次只读一个byte，单位时间内IO的数据量当然更高。那是不是Segment越大越好？当然不是。因为Segment内数据的IO还是以byte为单位的，如果Segment过大的话，数据就不能很好的进行分块。想象下把数据只分为一个大的Segment，那每次IO不就是以byte为单位了吗？那一个Segment的大小为多少比较合适，在我看来，最好和计算机中的一个页面大小一致。&lt;/li&gt;
+&lt;li&gt;另一方面，由于使用了链表，这使得数据的管理十分高效，因为只要移动指针就可以进行数据的移动。SegmentPool是Segment组成的单向链表，负责Segment的回收和闲置Segment的维护。
+我们可以看看SegmentPool是如何维护闲置Segment的，SegmentPool提供了两个方法，take()用于获取一个闲置Segment，recycle(Segment segment)用于回收一个Segment。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;Segment &lt;span class=&quot;title&quot;&gt;take&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	&lt;span class=&quot;keyword&quot;&gt;synchronized&lt;/span&gt; (&lt;span class=&quot;keyword&quot;&gt;this&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	&lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (next != &lt;span class=&quot;keyword&quot;&gt;null&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    Segment result = next;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    next = result.next;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    result.next = &lt;span class=&quot;keyword&quot;&gt;null&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    byteCount -= Segment.SIZE;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; result;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	&lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; Segment(); &lt;span class=&quot;comment&quot;&gt;// Pool is empty. Don&#39;t zero-fill while holding a lock.&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;由于SegmentPool的next指向Pool中闲置的Segment，所以直接返回next指向的Segment就可以了，当没有闲置的Segment是就新建一个返回。&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;	void recycle(Segment segment) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    if (segment.next != null || segment.prev != null) throw new IllegalArgumentException();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    synchronized (this) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	      if (byteCount + Segment.SIZE &amp;gt; MAX_SIZE) return; // Pool is full.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	      byteCount += Segment.SIZE;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	      segment.next = next;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	      segment.pos = segment.limit = 0;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	      next = segment;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;```	&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;在Pool不满的情况下，recycle只要将对应的segment插入到单向链表的头部（也就是next指向segment的前面）就相当于回收了该segment。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;okio的高效主要体现在Buffer中，所以我们可以看看Buffer的实现。由于每个Segment里都有pos和limit两个下标，这和Java NIO里的Buffer有点像，只要通过对pos和limit进行操作，我们就可以判断当前Segment是否写满（limit==SIZE）、是否读完（pos==limit），这就提高了IO的效率了。再看看`readFrom()`和`writeTo()`方法都是尽量以块大小进行IO的。而且为了进行减少调用系统申请内存产生的消耗，Buffer使用了SegmentPool进行Segment的回收和申请。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;###Okio方便在哪里&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;1.	Okio之所以方便主要体现在它对许多常用的操作进行了封装，主要体现在BufferedSink和BufferedSource接口为调用者提供了丰富的方法，想基本数据（short，int，long，string）的IO还有Sink和Source之间的转换等，它都提供了相应的方法；另一方面，Okio创建了一个新的数据类型ByteString，ByteString对String进行了封装，为byte和String间的转换和String不同值间的转换（UTF-8编解码，Hex编解码，Base64编解码，ASCIll编解码，大小端转换）提供了十分方便的操作，具体可以查看其相应的方法。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2.	Okio通过AsyncTimeout所有的Source和Sink提供了超时操作。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	Timeout是AsyncTimeout的基类，想看看Timeout实现了什么？Timeout对原本的概念进行可扩展，它有两个属性，Timeouts和Deadlines。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	*	Timeouts：代表一个**时间段**，表示等待一个操作执行完毕的最长时间。Timeouts一般用来检测类似网络中断等问题。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	*	Deadlines：代表一个**时间点**，表示一个job（包含多个操作）最长执行到某个时间点。Deadlines可以为一个job设定它的执行时间上限，比如一个对电池电量敏感的APP为了节省电池消耗，也许会在APP content的预加载上设置Deadlines。&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	AsyncTimeout的主要字段有：&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	```java&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	private static AsyncTimeout head：私有静态变量head，用来当单链表的头&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	private AsyncTimeout next：指向下一个AsyncTiemout的节点&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	private long timeoutAt：根据timeout计算出的timeout时间点&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;要实现对应Source和Sink的Timeout管理只需要管理这条AsyncTimeout优先队列链表就可以了。添加Timeout对应入队（scheduleTimeout方法），取消超时对应出队（cancelScheduledTimeout方法）。守护线程Watchdog，会不断的去轮询这条链表，如果对应节点超时就调用Interrupted进行中断，否则调用wait进行等待。&lt;/p&gt;
+&lt;p&gt;###Okio中的其他类：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;RealBufferedSink&lt;/code&gt;和&lt;code&gt;RealBufferedSource&lt;/code&gt;，不带缓存的Sink和Source，实现方式是在每次write或read之后都调用emitCompleteSegments()方法（emitCompleteSegments()方法会将Buffer中的数据flush掉）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ForwardingSink&lt;/code&gt;和&lt;code&gt;ForwardingSource&lt;/code&gt;，将调用委托给其他Sink或Source的抽象类，在子类化的时候有用。比如当需要实现一个匿名Sink或Source时，就可以用这个。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;GzipSink&lt;/code&gt;和&lt;code&gt;GzipSource&lt;/code&gt;，实现了Gzip的Sink和Source。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;DeflaterSink&lt;/code&gt;和&lt;code&gt;InflaterSource&lt;/code&gt;，实现了ZLIB压缩和解压的Sink和Source，在DeflaterSink这个类中，由于每次调用flush()程序都会对整个Buffer进行同步压缩，所以官方建议只在程序有必要时才主动去调用flush(),否则频繁的调用flush()会引起性能上的问题。
+从上面这些类看出，我们完全可以对Sink和Source进行扩展，以实现一些针对不同compression或encryption的Sink和Source，比如可以编写针对H264的H264EnCodeSink和H264DeCodeSource。&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本篇分析基于&lt;a href=&quot;https://github.com/square/okio&quot;&gt;Okio&lt;/a&gt;1.2.0
+Okio是一个对原有的&lt;code&gt;java.io&lt;/code&gt;和&lt;code&gt;java.nio&lt;/code&gt;进行改进的IO库，使IO操作更加高效和方便。Okio的高效主要体现在三个方面：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一它对数据进行了&lt;strong&gt;&lt;em&gt;分块处理&lt;/em&gt;&lt;/strong&gt;，这样在大数据IO的时候可以以块为单位进行IO，这可以提高IO的吞吐率。&lt;/li&gt;
+&lt;li&gt;二它对这些数据块使用&lt;strong&gt;&lt;em&gt;链表&lt;/em&gt;&lt;/strong&gt;进行管理，这可以仅通过移动“指针”就进行数据的管理，而不用真正去处理数据，而且对扩容来说也十分方便。&lt;/li&gt;
+&lt;li&gt;三对闲置的块进行管理，通过一个块池（SegmentPool）的管理，避免系统GC和申请byte时的zero-fill。
+    
+    </summary>
+    
+    
+      <category term="code" scheme="http://www.baitouwei.com/tags/code/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>2014阅读书单</title>
+    <link href="http://www.baitouwei.com/2014/12/28/2014%E9%98%85%E8%AF%BB%E4%B9%A6%E5%8D%95/"/>
+    <id>http://www.baitouwei.com/2014/12/28/2014阅读书单/</id>
+    <published>2014-12-28T09:06:05.000Z</published>
+    <updated>2015-01-08T14:58:42.000Z</updated>
+    
+    <content type="html">&lt;p&gt;####	非技术类&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;《解忧杂货铺》
+&lt;img src=&quot;/image/%E8%A7%A3%E5%BF%A7%E6%9D%82%E8%B4%A7%E9%93%BA.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;2014看过的最好看的小说，故事情节一环扣一环，故事仅在一个晚上的时间就把几十年的事情都串起来，这种设定让我读完后有一种好像在一瞬间经历了几十年了错觉。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;《三体》
+&lt;img src=&quot;/image/%E4%B8%89%E4%BD%93.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;大名鼎鼎的三体，8月份左右读的，三部连着看，也是十分精彩，力荐。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《白夜行》
+&lt;img src=&quot;/image/%E7%99%BD%E5%A4%9C%E8%A1%8C.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《一个人的朝圣》
+&lt;img src=&quot;/image/%E4%B8%80%E4%B8%AA%E4%BA%BA%E7%9A%84%E6%9C%9D%E5%9C%A3.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这个朝圣路就是主人公在晚年的时候回顾自己的一生的过程，主人公通过徒步的方式，物理刺激肉体，从而引导其心理上的自我反省和救赎。是一本内心独白的小说。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《职场动物进化手册》
+&lt;img src=&quot;/image/%E8%81%8C%E5%9C%BA%E5%8A%A8%E7%89%A9%E8%BF%9B%E5%8C%96%E6%89%8B%E5%86%8C.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这本书看看就好，现实生活要现实分析。不过作者的这种用动物来比喻人的写法，我当时读的时候感觉很新鲜，这种叙事方式相当的幽默婉转。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《如何阅读一本书》
+&lt;img src=&quot;/image/%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这本是我2014年读的最好的书，没有之一，虽然以前读过，不过这次才算真正读了这本书。总结下来重点就是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;弄明白你读一本书的意义，也就是你为什么要读某一本书？读了它可以给你带来什么？&lt;/li&gt;
+&lt;li&gt;给你读的书分类。目前来说，我就简单分为实用类和非实用类，实用类就是教你怎么做某件事的书，反之就是非实用类，像《如何阅读一本书》显然就是实用类的书，而大多数哲学类的书就是非使用类的书，前面提到的《一个人的朝圣路》就是非实用类书。&lt;/li&gt;
+&lt;li&gt;先略读，通过封面，目录，前言或者翻阅前几章和最后一章等方式，大致了解一本书后再去决定要不要细读。这样可以节省很多时间。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这是一本非常不错的书，推荐每个读书的人都应该认真的去读下。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《把时间当朋友》
+&lt;img src=&quot;/image/%E6%8A%8A%E6%97%B6%E9%97%B4%E5%BD%93%E6%9C%8B%E5%8F%8B.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《暗时间》
+&lt;img src=&quot;/image/%E6%9A%97%E6%97%B6%E9%97%B4.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;暗时间在我理解来就是潜意识，不过书中的元知识的观点很受用啊，其实也就是我们常说的基础，基础打的好，才能爬得高。我看完后就决定去好好看看《深入理解计算机系统》这本书。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《影响力》
+&lt;img src=&quot;/image/%E5%BD%B1%E5%93%8D%E5%8A%9B.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《中国人的焦虑从哪里来》
+&lt;img src=&quot;/image/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E7%9A%84%E7%84%A6%E8%99%91%E4%BB%8E%E5%93%AA%E9%87%8C%E6%9D%A5.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;书里有一个观点，就是劳动不能创造财富，财富是通过交换来创造的。也就是说，把一样物品放到合适的地方，它就可以产生财富，这也就是商人干的事情，古代的物物交换就是这样的。还有一点就是平等分析的最后其实就是尊重人权。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《学习之道》
+&lt;img src=&quot;/image/%E5%AD%A6%E4%B9%A0%E4%B9%8B%E9%81%93.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;第一个看这本书的名字还以为是一本教你如何快速记忆子类的书籍，感觉名字起的不好，读完之后才发觉其实名字起的挺好的。道，其实就是道可道，非常道。这本书讲的更多的是学习过程中心理上的调整，教你如何通过心理调整更好的学习，更好的体会学习。这本书，属于那种适合重读多遍的书。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《程序员的思维修炼》
+&lt;img src=&quot;/image/%E7%A8%8B%E5%BA%8F%E5%91%98%E7%9A%84%E6%80%9D%E7%BB%B4%E4%BF%AE%E7%82%BC.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;讲的是右脑的开发，和《暗时间》那本书有相似之处，都是讲潜意识的。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《活法》
+&lt;img src=&quot;/image/%E6%B4%BB%E6%B3%95.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;原本以为是一本人生指导手册子类的书，读完才发现其实就是稻盛和夫讲述他的经营之道。其实这也是相通 的，一个企业的经营之道和它创始人的做人之道是息息相关的，可以这么说，企业就是其创始人的延伸，企业的经营之道就是其创始人的做人之道的延伸，这么来说的话，这本书讲的也就是稻盛和夫的做人之道，也就是他的活法。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;####	技术类&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;《深入理解计算机系统》
+&lt;img src=&quot;/image/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%B3%BB%E7%BB%9F.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;关于计算机机存储这块的内容讲的十分好，前面的知识都是后面讲述内容的基础，推荐按照章节顺序阅读。我阅读的时候是按照章节，调整把存储相关的内容读完的，这样读每次只针对一个知识点来，对我来说效率更好。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《Head First设计模式》
+&lt;img src=&quot;/image/Head_First%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;设计模式入门好书，简单易懂。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《Java网络编程》
+&lt;img src=&quot;/image/Java%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;读到Java IO那里，最好先去看看装饰者模式，这样可以更好的理解Java IO，为什么Java IO有那么多个类？推荐《Head_First设计模式》&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;《Java NIO》
+&lt;img src=&quot;/image/Java_NIO.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;Java NIO的入门好书，关于NIO的讲的很详细。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;####	非技术类&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;《解忧杂货铺》
+&lt;img src=&quot;/image/%E8%A7%A3%E5%BF%A7%E6%9D%82%E8%B4%A7%E9%93%BA.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;2014看过的最好看的小说，故事情节一环扣一环，故事仅在一个晚上的时间就把几十年的事情都串起来，这种设定让我读完后有一种好像在一瞬间经历了几十年了错觉。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+    
+      <category term="read" scheme="http://www.baitouwei.com/tags/read/"/>
+    
+  </entry>
+  
+</feed>

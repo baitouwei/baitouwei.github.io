@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Android 系统启动流程 · baitouwei</title><meta name="description" content="Android 系统启动流程 - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">Android 系统启动流程</h1><div class="post-time">Apr 7, 2016</div><div class="post-content"><blockquote>
+<p>基于Android 6.0 源码</p>
+</blockquote>
+<p>下面主要是从 Framework 层开始分析 Android 的启动过程，ZygoteInit.main() 是系统调用的第一个 Java 函数，这里是 c 到 java 的入口，分析从这里开始，整个流程如下：</p>
+<a id="more"></a>
+<p><img src="/image/android_system_start.png" alt="android_start"></p>
+<p>Ps:</p>
+<ol>
+<li>Zygote进程是Android系统的首个Java进程，Zygote是所有Java进程的父进程，init 进程 fork 出 Zygote进程（）。</li>
+<li>System Server是Zygote孵化的第一个进程，也是上层framework的运行载体，System Server进程：负责启动和管理整个Java framework，包含ActivityManager，PowerManager等服务。System Server进程由 Zygote进程fork出来。</li>
+<li>Zygote进程接下来会孵化出的第一个App进程是Launcher，这是用户看到的桌面App；Zygote进程还会创建Browser，Phone，Email等App进程，每个App至少运行在一个进程上。
+所有的App进程都是由Zygote进程fork生成的。</li>
+</ol>
+<h3>附录：</h3>
+<h4>服务分类</h4>
+<h4>分类1</h4>
+<ol>
+<li>引导服务：ActivityManagerService、PowerManagerService、LightsService、DisplayManagerService、PackageManagerService、UserManagerService、SensorService共7项服务；</li>
+<li>核心服务：BatteryService、UsageStatsService、WebViewUpdateService共3项服务；</li>
+<li>其他服务：AlarmManagerService、VibratorService等共70多项服务。</li>
+</ol>
+<h4>分类2</h4>
+<ol>
+<li>重量级服务：ActivityManagerService、PackageManagerService、WindowManagerService</li>
+<li>功耗相关：PowerManagerService、BatteryService、BatteryStatsService、DreamManagerService</li>
+<li>统计调度相关：DropBoxManagerService、SamplingProfilerService、UsageStatsService、DiskStatsService、SchedulingPolicyService、DeviceStorageMonitorService、AlarmManagerService、DeviceIdleController、DockObserver、ThermalObserver、JobSchedulerService、AccessibilityManagerService</li>
+<li>UI相关：DisplayManagerService、LightsService、GraphicsStatsService、StatusBarManagerService、NotificationManagerService、WallpaperManagerService、UiModeManagerService、AppWidgetService、LauncherAppsService、TextServicesManagerService、ContentService、LockSettingsService、InputManagerService、InputMethodManagerServiceMountService、FingerprintService、TvInputManagerService</li>
+<li>网络相关：NetworkManagementService、NetworkScoreService、NetworkStatsService、NetworkPolicyManagerService、ConnectivityService、BluetoothService、WifiP2pService、WifiService、WifiScanningService、EthernetService、WebViewUpdateService</li>
+<li>Media相关：AudioService、MediaRouterService、VoiceInteractionManagerService、MediaProjectionManagerService、MediaSessionService、</li>
+<li>设备相关：DevicePolicyManagerService、PrintManagerService、BackupManagerService、UserManagerService、AccountManagerService、TrustManagerService、SensorService、LocationManagerService、VibratorService、CountryDetectorService、GestureLauncherService、PersistentDataBlockService、ClipboardService</li>
+<li>其他：TelephonyRegistry、TelecomLoaderService、NsdService、UpdateLockService、SerialService、SearchManagerService、CommonTimeManagementService、AssetAtlasService、ConsumerIrService、MidiServiceCameraService、TwilightService、RestrictionsManagerService、MmsServiceBroker、RttService、UsbService。</li>
+</ol>
+<h4>参考 Link：</h4>
+<ul>
+<li><a href="http://gityuan.com/2016/01/30/android-boot/" target="_blank" rel="external">1</a></li>
+</ul>
+</div></article></div></section><footer><div class="paginator"><a href="/2015/11/13/ASwipeRefresh/" class="next">NEXT</a></div><div class="copyright"><p>© 2014 - 2016 <a href="http://www.baitouwei.com">baitouwei</a>, unless otherwise noted.</p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?a36e15d9e2adec9a21fcdd9f686b1ed2";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>

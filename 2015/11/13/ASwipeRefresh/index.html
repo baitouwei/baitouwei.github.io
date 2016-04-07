@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> ASwipeRefresh · baitouwei</title><meta name="description" content="ASwipeRefresh - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">ASwipeRefresh</h1><div class="post-time">Nov 13, 2015</div><div class="post-content"><p>之前在做项目的时候，项目里面的下拉刷新控件是一个直接继承 ListView 实现的 PullToRefreshListView。由于是直接集成 ListView 实现的，所以只能在使用 ListView 的场景下才能使用，而且不能很方便的实现多种类型的下拉刷新方式，所以我就写了一个下拉刷新的控件 <a href="https://github.com/baitouwei/ASwipeRefresh" target="_blank" rel="external">ASwipeRefresh</a>。这个控件主要实现了两件功能：</p>
+<ol>
+<li>支持自定义下拉刷新的 Header 和 上拉加载更多的 Footer</li>
+<li>支持自定义 Header 和 Footer 的滑出方式</li>
+</ol>
+<a id="more"></a>
+<p>这两个功能是我认为比较重要的功能，因为通过组合上面提到的 1 和 2 就可以实现现在的大多数下拉刷新方式。对于现在用的比较多的下拉刷新方式，可以将其分为 4 种类型。一个下拉刷新控件可以分为 Header，Content，和 Footer 三部分，而这四种不同类型的刷新方式之间的主要不同点就是手指拖动的对应的 Header，Content 或 Footer 是否会滑动和这三个 View 在层级（也就是 Z 轴）上的关系。</p>
+<p><img src="/image/header_content_footer.png" alt=""></p>
+<p>按常见程度排序它们分别是：</p>
+<ol>
+<li>
+<p>Normal refresh,普通下拉刷新</p>
+<p><img src="/image/normal_refresh.gif" alt=""></p>
+<blockquote>
+<ol>
+<li>Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是<strong>同步</strong>滑动的（即滑动的距离<strong>相等</strong>）。</li>
+<li>Content 和 Header，Footer 三者在同一层上（即在 Z 轴上是相等的）</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>Drawer refresh,抽屉式下拉刷新</p>
+<p><img src="/image/drawer_refresh.gif" alt=""></p>
+<blockquote>
+<ol>
+<li>Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是<strong>不同步</strong>滑动的（即滑动的距离<strong>不相等</strong>），一般常见为 Header 或 Footer 不滑动。</li>
+<li>Content 是在 Header 和 Footer 的上一层视图（即 Content Z 轴上是<strong>最大</strong>的，Z 轴值大的会覆盖住 Z 轴值小的视图）</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>Material refresh</p>
+<p><img src="/image/material_refresh.gif" alt=""></p>
+<blockquote>
+<p>因为这种下拉刷新的方式我最先是在 Google 的 Lollipop 上看到的，所以就命名为Material refresh。这种刷新方式和上面的 Drawer refresh 很类似，区别就是 Header 或 Footer 的 Z 轴值比 Content 的大而且 Content 不会滑动。</p>
+<ol>
+<li>Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是<strong>不同步</strong>滑动的（即滑动的距离<strong>不相等</strong>），一般常见为 Content <strong>不滑动</strong>。</li>
+<li>Content 是在 Header 和 Footer 的上一层视图（即 Content Z 轴上是<strong>最小</strong>的，Z 轴值大的会覆盖住 Z 轴值小的视图）</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>Side in Refresh</p>
+<p><img src="/image/side_in_refresh.gif" alt=""></p>
+<blockquote>
+<p>这种下拉刷新和 Material refresh 类似，区别就是 Header 或 Footer 改成了由侧面滑入。</p>
+<ol>
+<li>Content（即要滑动的正文视图）滑动的时候，Header 和 Footer 是<strong>不同步</strong>滑动的（即滑动的距离<strong>不相等</strong>），一般常见为 Content <strong>不滑动</strong>。</li>
+<li>Content 是在 Header 和 Footer 的上一层视图（即 Content Z 轴上是<strong>最小</strong>的，Z 轴值大的会覆盖住 Z 轴值小的视图）</li>
+</ol>
+</blockquote>
+</li>
+</ol>
+<p>所以这样看来的话，一个可以适应以上所有下拉刷新场景的控件，要满足以下功能：</p>
+<ul>
+<li>可以自定义 Header，Footer，Content 之间的层级关系（也就是 Z 轴的值）。在　ASwipeRefresh 中对应的是 <code>LayoutLayer</code></li>
+<li>可以自定义 Header，Footer 从哪个方向滑动出来，同时还要可以自定义 Header，Footer的初始位置。在　ASwipeRefresh 中对应的分别是<code>LayoutDirection</code>,<code>OffsetOrientation</code>，</li>
+<li>可以自定义 Header，Footer，Content 是否可以滑动。在　ASwipeRefresh 中对应的是 <code>parallaxFactor</code> ，<code>parallaxFactor</code> 是用来设置滑动时候对应 View 的视差因数的，这里只要设置为 0，对应的 View 也就不会滑动了</li>
+<li>当然还要可以自定义 Header 和 Footer，这里主要是把当前 ASwipeRefresh 滑动的 percent 和 status 传递过去。</li>
+</ul>
+<p>除此之外，我还把是否可以进行刷新通过回调 <code>isReadyToRefresh</code> 和 <code>isReadyToLoadMore</code> 暴露出来，这样就可以自定义滑动到什么位置才进行刷新。不过现在这个控件还是有缺点的，自动刷新那里处理的不是很好，由于不能缺点一个 View 什么时候已经 ready，所以找不到合适的位置去自动调用下拉刷新，现在的作法通过延时来实现，但其实很不好，无法保证能自动下拉成功，所以要实现自动下拉刷新的话，建议在外部合适的位置手动调用 <code>refreshStart</code></p>
+</div></article></div></section><footer><div class="paginator"><a href="/2016/04/07/Android-系统启动流程/" class="prev">PREV</a><a href="/2015/01/08/okio/" class="next">NEXT</a></div><div class="copyright"><p>© 2014 - 2016 <a href="http://www.baitouwei.com">baitouwei</a>, unless otherwise noted.</p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?a36e15d9e2adec9a21fcdd9f686b1ed2";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
