@@ -6,7 +6,7 @@
 <p><img src="/image/android_system_start.png" alt="android_start"></p>
 <p>Ps:</p>
 <ol>
-<li>Zygote进程是Android系统的首个Java进程，Zygote是所有Java进程的父进程，init 进程 fork 出 Zygote进程（）。</li>
+<li>Zygote 进程是Android系统的首个Java进程，Zygote是所有Java进程的父进程，init 进程 fork 出 Zygote进程（）。</li>
 <li>System Server是Zygote孵化的第一个进程，也是上层framework的运行载体，System Server进程：负责启动和管理整个Java framework，包含ActivityManager，PowerManager等服务。System Server进程由 Zygote进程fork出来。</li>
 <li>Zygote进程接下来会孵化出的第一个App进程是Launcher，这是用户看到的桌面App；Zygote进程还会创建Browser，Phone，Email等App进程，每个App至少运行在一个进程上。
 所有的App进程都是由Zygote进程fork生成的。</li>
