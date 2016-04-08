@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.baitouwei.com/"/>
-  <updated>2016-04-07T11:07:00.000Z</updated>
+  <updated>2016-04-08T00:27:55.000Z</updated>
   <id>http://www.baitouwei.com/</id>
   
   <author>
@@ -14,6 +14,97 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Android Framework 层 中的 Binder 机制</title>
+    <link href="http://www.baitouwei.com/2016/04/08/Android-Framework-%E5%B1%82-%E4%B8%AD%E7%9A%84-Binder-%E6%9C%BA%E5%88%B6/"/>
+    <id>http://www.baitouwei.com/2016/04/08/Android-Framework-层-中的-Binder-机制/</id>
+    <published>2016-04-08T00:08:44.000Z</published>
+    <updated>2016-04-08T00:27:55.000Z</updated>
+    
+    <content type="html">&lt;blockquote&gt;
+&lt;p&gt;基于Android 6.0 源码&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Binder 机制：Android 系统提供的 IPC 方式&lt;/h2&gt;
+&lt;p&gt;Binder 机制的实现可以分为 3 层：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Android Driver层：Binder还可以理解为一种虚拟的物理设备，它的设备驱动是/dev/binder；&lt;/li&gt;
+&lt;li&gt;Android Native层：Binder是创建Service Manager以及BpBinder/BBinder模型，搭建与binder驱动的桥梁；&lt;/li&gt;
+&lt;li&gt;Android Framework层：Binder是各种Manager（ActivityManager、WindowManager等）和相应xxxManagerService的桥梁；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;h4&gt;Binder 架构图&lt;/h4&gt;
+&lt;p&gt;&lt;img src=&quot;/image/java_binder.jpg&quot; alt=&quot;java_binder.jpg&quot;&gt;&lt;/p&gt;
+&lt;p&gt;Framework 层的 Binder 机制是通过 JNI 层，把请求最终转发到 Native 层，由 Native 层实现实际的通讯过程。而且 Framework 层的 Binder 机制和 Native 层的实现结构差不多，可以理解为是 Native Binder 机制的映射。&lt;/p&gt;
+&lt;h4&gt;Framework 层和 Binder 实现相关的类&lt;/h4&gt;
+&lt;p&gt;&lt;img src=&quot;/image/binder_classes_of_framework.png&quot; alt=&quot;binder_classes_of_framework.png&quot;&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;IBinder 接口：远程调用对象的基础接口，核心的方法是&lt;code&gt;transact()&lt;/code&gt;，通过该方法可以与远程调用对象进行通讯。&lt;/li&gt;
+&lt;li&gt;Binder 类：远程调用对象的基类，该类一些远程调用对象的标准实现进行了抽象，一般通过继承该类实现 IPC。核心方法是&lt;code&gt;transact()&lt;/code&gt;和&lt;code&gt;onTransact()&lt;/code&gt;，程序可以通过暴露的&lt;code&gt;transact()&lt;/code&gt;进行通讯，&lt;code&gt;transact()&lt;/code&gt;再把数据转发到 protected 的 &lt;code&gt;onTransact()&lt;/code&gt;，实现通讯。&lt;/li&gt;
+&lt;li&gt;BinderProxy 类：Binder 的实现类，Framework 层的 Binder 通讯最终都是通过 BinderProxy 代理到 Native 层的。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;BinderProxy 对应的就是 Native 层的 BpBinder，android_util_Binder.cpp 会在 &lt;code&gt;register_android_os_Binder()&lt;/code&gt; 中会对 Binder，BinderInternal，BinderProxy 进行注册，最后使得 BinderInternal.getContextObject() 等于 new BinderProxy()，而在 Framework 层是通过 &lt;code&gt;ServiceManagerNative.asInterface(BinderInternal.getContextObject())&lt;/code&gt; 进行绑定的，其实也就等价于&lt;code&gt;ServiceManagerNative.asInterface(new BinderProxy())&lt;/code&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;IInterface  接口：主要提供一个方法&lt;code&gt;asBinder()&lt;/code&gt;，可以通过这个方法找到对应的 Binder&lt;/li&gt;
+&lt;li&gt;IServiceManager 接口：获取和注册系统服务的基础接口&lt;/li&gt;
+&lt;li&gt;ServiceManager 类：通过该类可以获取和注册系统服务，实际请求都是由单例的&lt;code&gt;ServiceManagerProxy&lt;/code&gt;进行代理的，ServiceManager 能集中管理系统内的所有服务，它能施加权限控制，并不是任何进程都能注册服务。&lt;/li&gt;
+&lt;li&gt;ServiceManagerNative 类：实现获取和注册系统服务抽象类，实际请求都是由&lt;code&gt;ServiceManagerProxy&lt;/code&gt;进行代理的&lt;/li&gt;
+&lt;li&gt;ServiceManagerProxy 类：实现获取和注册系统服务的实际类&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;addService():注册服务过程就是通过BpBinder来发送ADD_SERVICE_TRANSACTION命令，与实现与binder驱动进行数据交互。
+getService():获取服务过程就是通过BpBinder来发送GET_SERVICE_TRANSACTION命令，与实现与binder驱动进行数据交互。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h4&gt;Binder进程与线程&lt;/h4&gt;
+&lt;p&gt;&lt;img src=&quot;/image/binder_proc_relation.png&quot; alt=&quot;binder_proc_relation.png&quot;&gt;
+对于底层Binder驱动，通过binder_procs链表记录所有创建的binder_proc结构体，binder驱动层的每一个binder_proc结构体都与用户空间的一个用于binder通信的进程一一对应，且每个进程有且只有一个ProcessState对象，这是通过单例模式来保证的。在每个进程中可以有很多个线程，每个线程对应一个IPCThreadState对象，IPCThreadState对象也是单例模式，即一个线程对应一个IPCThreadState对象，在Binder驱动层也有与之相对应的结构，那就是Binder_thread结构体。在binder_proc结构体中通过成员变量rb_root threads，来记录当前进程内所有的binder_thread。&lt;/p&gt;
+&lt;p&gt;Binder线程池：每个Server进程在启动时会创建一个binder线程池，并向其中注册一个Binder线程；之后Server进程也可以向binder线程池注册新的线程，或者Binder驱动在探测到没有空闲binder线程时会主动向Server进程注册新的的binder线程。对于一个Server进程有一个最大Binder线程数限制，默认为16个binder线程，例如Android的system_server进程就存在16个线程。对于所有Client端进程的binder请求都是交由Server端进程的binder线程来处理的。&lt;/p&gt;
+&lt;h4&gt;Binder 传输过程:&lt;/h4&gt;
+&lt;p&gt;&lt;img src=&quot;/image/binder_transaction.png&quot; alt=&quot;binder_transaction.png&quot;&gt;
+Binder IPC机制，就是指在进程间传输数据（binder_transaction_data），一次数据的传输，称为事务（binder_transaction）。对于多个不同进程向同一个进程发送事务时，这个同一个进程或线程的事务需要串行执行，在Binder驱动中为binder_proc和binder_thread都有todo队列。
+也就是说对于进程间的通信，就是发送端把binder_transaction节点，插入到目标进程或其子线程的todo队列中，等目标进程或线程不断循环地从todo队列中取出数据并进行相应的操作。&lt;/p&gt;
+&lt;p&gt;binder的路由原理：BpBinder发送端，根据handler，在当前binder_proc中，找到相应的binder_ref，由binder_ref再找到目标binder_node实体，由目标binder_node再找到目标进程binder_proc。简单地方式是直接把binder_transaction节点插入到binder_proc的todo队列中，完成传输过程。
+对于binder驱动来说应尽可能地把binder_transaction节点插入到目标进程的某个线程的todo队列，效率更高。当binder驱动可以找到合适的线程，就会把binder_transaction节点插入到相应线程的todo队列中，如果找不到合适的线程，就把节点之间插入binder_proc的todo队列。&lt;/p&gt;
+&lt;h2&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;部分图片引用自&lt;a href=&quot;http://gityuan.com&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Gityuan 博客&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://gityuan.com/2015/10/31/binder-prepare/#section-1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;1&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://gityuan.com/2015/11/28/binder-summary/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;2&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;扩展：&lt;/h2&gt;
+&lt;p&gt;常见的 IPC 有：&lt;/p&gt;
+&lt;h4&gt;IPC(Inter-process communication)进程间通讯方式&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;管道：在创建时分配一个page大小的内存，缓存区大小比较有限；&lt;/li&gt;
+&lt;li&gt;消息队列：信息复制两次，额外的CPU消耗；不合适频繁或信息量大的通信；&lt;/li&gt;
+&lt;li&gt;共享内存：无须复制，共享缓冲区直接付附加到进程虚拟地址空间，速度快；但进程间的同步问题操作系统无法实现，必须各进程利用同步工具解决；&lt;/li&gt;
+&lt;li&gt;套接字：作为更通用的接口，传输效率低，主要用于不通机器或跨网络的通信；&lt;/li&gt;
+&lt;li&gt;信号量：常作为一种锁机制，防止某进程正在访问共享资源时，其他进程也访问该资源。因此，主要作为进程间以及同一进程内不同线程之间的同步手段。&lt;/li&gt;
+&lt;li&gt;信号: 不适用于信息交换，更适用于进程中断控制，比如非法内存访问，杀死某个进程等；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;RPC（Remote Procedure Call Protocol）——远程过程调用协议&lt;/h4&gt;
+&lt;p&gt;RPC 是一个计算机通信协议。该协议允许运行于一台计算机的程序调用另一台计算机的子程序，而程序员无需额外地为这个交互作用编程。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;blockquote&gt;
+&lt;p&gt;基于Android 6.0 源码&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Binder 机制：Android 系统提供的 IPC 方式&lt;/h2&gt;
+&lt;p&gt;Binder 机制的实现可以分为 3 层：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Android Driver层：Binder还可以理解为一种虚拟的物理设备，它的设备驱动是/dev/binder；&lt;/li&gt;
+&lt;li&gt;Android Native层：Binder是创建Service Manager以及BpBinder/BBinder模型，搭建与binder驱动的桥梁；&lt;/li&gt;
+&lt;li&gt;Android Framework层：Binder是各种Manager（ActivityManager、WindowManager等）和相应xxxManagerService的桥梁；&lt;/li&gt;
+&lt;/ol&gt;
+    
+    </summary>
+    
+    
+  </entry>
   
   <entry>
     <title>Android 系统启动流程</title>

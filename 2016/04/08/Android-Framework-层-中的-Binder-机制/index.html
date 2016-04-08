@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Android Framework 层 中的 Binder 机制 · baitouwei</title><meta name="description" content="Android Framework 层 中的 Binder 机制 - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">Android Framework 层 中的 Binder 机制</h1><div class="post-time">Apr 8, 2016</div><div class="post-content"><blockquote>
+<p>基于Android 6.0 源码</p>
+</blockquote>
+<h2>Binder 机制：Android 系统提供的 IPC 方式</h2>
+<p>Binder 机制的实现可以分为 3 层：</p>
+<ol>
+<li>Android Driver层：Binder还可以理解为一种虚拟的物理设备，它的设备驱动是/dev/binder；</li>
+<li>Android Native层：Binder是创建Service Manager以及BpBinder/BBinder模型，搭建与binder驱动的桥梁；</li>
+<li>Android Framework层：Binder是各种Manager（ActivityManager、WindowManager等）和相应xxxManagerService的桥梁；</li>
+</ol>
+<a id="more"></a>
+<h4>Binder 架构图</h4>
+<p><img src="/image/java_binder.jpg" alt="java_binder.jpg"></p>
+<p>Framework 层的 Binder 机制是通过 JNI 层，把请求最终转发到 Native 层，由 Native 层实现实际的通讯过程。而且 Framework 层的 Binder 机制和 Native 层的实现结构差不多，可以理解为是 Native Binder 机制的映射。</p>
+<h4>Framework 层和 Binder 实现相关的类</h4>
+<p><img src="/image/binder_classes_of_framework.png" alt="binder_classes_of_framework.png"></p>
+<ul>
+<li>IBinder 接口：远程调用对象的基础接口，核心的方法是<code>transact()</code>，通过该方法可以与远程调用对象进行通讯。</li>
+<li>Binder 类：远程调用对象的基类，该类一些远程调用对象的标准实现进行了抽象，一般通过继承该类实现 IPC。核心方法是<code>transact()</code>和<code>onTransact()</code>，程序可以通过暴露的<code>transact()</code>进行通讯，<code>transact()</code>再把数据转发到 protected 的 <code>onTransact()</code>，实现通讯。</li>
+<li>BinderProxy 类：Binder 的实现类，Framework 层的 Binder 通讯最终都是通过 BinderProxy 代理到 Native 层的。</li>
+</ul>
+<blockquote>
+<p>BinderProxy 对应的就是 Native 层的 BpBinder，android_util_Binder.cpp 会在 <code>register_android_os_Binder()</code> 中会对 Binder，BinderInternal，BinderProxy 进行注册，最后使得 BinderInternal.getContextObject() 等于 new BinderProxy()，而在 Framework 层是通过 <code>ServiceManagerNative.asInterface(BinderInternal.getContextObject())</code> 进行绑定的，其实也就等价于<code>ServiceManagerNative.asInterface(new BinderProxy())</code></p>
+</blockquote>
+<ul>
+<li>IInterface  接口：主要提供一个方法<code>asBinder()</code>，可以通过这个方法找到对应的 Binder</li>
+<li>IServiceManager 接口：获取和注册系统服务的基础接口</li>
+<li>ServiceManager 类：通过该类可以获取和注册系统服务，实际请求都是由单例的<code>ServiceManagerProxy</code>进行代理的，ServiceManager 能集中管理系统内的所有服务，它能施加权限控制，并不是任何进程都能注册服务。</li>
+<li>ServiceManagerNative 类：实现获取和注册系统服务抽象类，实际请求都是由<code>ServiceManagerProxy</code>进行代理的</li>
+<li>ServiceManagerProxy 类：实现获取和注册系统服务的实际类</li>
+</ul>
+<blockquote>
+<p>addService():注册服务过程就是通过BpBinder来发送ADD_SERVICE_TRANSACTION命令，与实现与binder驱动进行数据交互。
+getService():获取服务过程就是通过BpBinder来发送GET_SERVICE_TRANSACTION命令，与实现与binder驱动进行数据交互。</p>
+</blockquote>
+<h4>Binder进程与线程</h4>
+<p><img src="/image/binder_proc_relation.png" alt="binder_proc_relation.png">
+对于底层Binder驱动，通过binder_procs链表记录所有创建的binder_proc结构体，binder驱动层的每一个binder_proc结构体都与用户空间的一个用于binder通信的进程一一对应，且每个进程有且只有一个ProcessState对象，这是通过单例模式来保证的。在每个进程中可以有很多个线程，每个线程对应一个IPCThreadState对象，IPCThreadState对象也是单例模式，即一个线程对应一个IPCThreadState对象，在Binder驱动层也有与之相对应的结构，那就是Binder_thread结构体。在binder_proc结构体中通过成员变量rb_root threads，来记录当前进程内所有的binder_thread。</p>
+<p>Binder线程池：每个Server进程在启动时会创建一个binder线程池，并向其中注册一个Binder线程；之后Server进程也可以向binder线程池注册新的线程，或者Binder驱动在探测到没有空闲binder线程时会主动向Server进程注册新的的binder线程。对于一个Server进程有一个最大Binder线程数限制，默认为16个binder线程，例如Android的system_server进程就存在16个线程。对于所有Client端进程的binder请求都是交由Server端进程的binder线程来处理的。</p>
+<h4>Binder 传输过程:</h4>
+<p><img src="/image/binder_transaction.png" alt="binder_transaction.png">
+Binder IPC机制，就是指在进程间传输数据（binder_transaction_data），一次数据的传输，称为事务（binder_transaction）。对于多个不同进程向同一个进程发送事务时，这个同一个进程或线程的事务需要串行执行，在Binder驱动中为binder_proc和binder_thread都有todo队列。
+也就是说对于进程间的通信，就是发送端把binder_transaction节点，插入到目标进程或其子线程的todo队列中，等目标进程或线程不断循环地从todo队列中取出数据并进行相应的操作。</p>
+<p>binder的路由原理：BpBinder发送端，根据handler，在当前binder_proc中，找到相应的binder_ref，由binder_ref再找到目标binder_node实体，由目标binder_node再找到目标进程binder_proc。简单地方式是直接把binder_transaction节点插入到binder_proc的todo队列中，完成传输过程。
+对于binder驱动来说应尽可能地把binder_transaction节点插入到目标进程的某个线程的todo队列，效率更高。当binder驱动可以找到合适的线程，就会把binder_transaction节点插入到相应线程的todo队列中，如果找不到合适的线程，就把节点之间插入binder_proc的todo队列。</p>
+<h2>参考</h2>
+<ul>
+<li>部分图片引用自<a href="http://gityuan.com" target="_blank" rel="external">Gityuan 博客</a></li>
+<li><a href="http://gityuan.com/2015/10/31/binder-prepare/#section-1" target="_blank" rel="external">1</a></li>
+<li><a href="http://gityuan.com/2015/11/28/binder-summary/" target="_blank" rel="external">2</a></li>
+</ul>
+<h2>扩展：</h2>
+<p>常见的 IPC 有：</p>
+<h4>IPC(Inter-process communication)进程间通讯方式</h4>
+<ol>
+<li>管道：在创建时分配一个page大小的内存，缓存区大小比较有限；</li>
+<li>消息队列：信息复制两次，额外的CPU消耗；不合适频繁或信息量大的通信；</li>
+<li>共享内存：无须复制，共享缓冲区直接付附加到进程虚拟地址空间，速度快；但进程间的同步问题操作系统无法实现，必须各进程利用同步工具解决；</li>
+<li>套接字：作为更通用的接口，传输效率低，主要用于不通机器或跨网络的通信；</li>
+<li>信号量：常作为一种锁机制，防止某进程正在访问共享资源时，其他进程也访问该资源。因此，主要作为进程间以及同一进程内不同线程之间的同步手段。</li>
+<li>信号: 不适用于信息交换，更适用于进程中断控制，比如非法内存访问，杀死某个进程等；</li>
+</ol>
+<h4>RPC（Remote Procedure Call Protocol）——远程过程调用协议</h4>
+<p>RPC 是一个计算机通信协议。该协议允许运行于一台计算机的程序调用另一台计算机的子程序，而程序员无需额外地为这个交互作用编程。</p>
+</div></article></div></section><footer><div class="paginator"><a href="/2016/04/07/Android-系统启动流程/" class="next">NEXT</a></div><div class="copyright"><p>© 2014 - 2016 <a href="http://www.baitouwei.com">baitouwei</a>, unless otherwise noted.</p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-65933410-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?a36e15d9e2adec9a21fcdd9f686b1ed2";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
