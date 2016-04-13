@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.baitouwei.com/"/>
-  <updated>2016-04-08T00:27:55.000Z</updated>
+  <updated>2016-04-13T07:34:10.000Z</updated>
   <id>http://www.baitouwei.com/</id>
   
   <author>
@@ -14,6 +14,74 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Retrofit 分析</title>
+    <link href="http://www.baitouwei.com/2016/04/13/Retrofit-%E5%88%86%E6%9E%90/"/>
+    <id>http://www.baitouwei.com/2016/04/13/Retrofit-分析/</id>
+    <published>2016-04-13T07:32:57.000Z</published>
+    <updated>2016-04-13T07:34:10.000Z</updated>
+    
+    <content type="html">&lt;blockquote&gt;
+&lt;p&gt;基于 Retrofit 2.0.1 版&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;h3&gt;源码结构&lt;/h3&gt;
+&lt;h4&gt;入口 Retrofit 类：&lt;/h4&gt;
+&lt;p&gt;Retrofit 类是这个库的入口，整个库所支持的特性都可以在这里看到。想看看它的 Builder 几个主要方法：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;create（final Class&lt;t&gt; service）：这里是整个库的入口。传入一个接口，Retrofit 通过动态代理，最终将接口转为一个 Call 并返回给使用者。&lt;/t&gt;&lt;/li&gt;
+&lt;li&gt;callbackExecutor（Executor executor）：配置回调用的 Executor，Executor 可以对回调进行调度。&lt;/li&gt;
+&lt;li&gt;addConverterFactory(Converter.Factory factory)，addCallAdapterFactory(CallAdapter.Factory factory)：配置对应的 Converter 或 CallAdapter，这个会在核心接口里面说。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;几个核心接口和类：&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Call 接口：表示一次 http 请求，包含 request 和 response。可以通过 &lt;code&gt;execute&lt;/code&gt; 方法进行异步请求，&lt;code&gt;enqueue&lt;/code&gt; 方法进行同步请求，&lt;code&gt;cancle&lt;/code&gt; 方法取消请求和回调。&lt;/li&gt;
+&lt;li&gt;OkHttpCall 类：Call 接口的 OKHttp 实现版。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;CallAdapter 接口：提供了 Call 到其他类型数据的转换，可以通过 &lt;code&gt;Retrofit.Builder.addCallAdapterFactory()&lt;/code&gt; 进行配。比如 adapter-rxjava 的实现，就是通过 CallAdapter 接口将 Call 转换为 Observable 的。&lt;/li&gt;
+&lt;li&gt;DefaultCallAdapterFactory 类：TODO&lt;/li&gt;
+&lt;li&gt;ExecutorCallAdapterFactory 类：如果在 Retrofit 中指定 callbackExecutor 的话，Retrofit 会默认添加添加一个 ExecutorCallAdapterFactory 到 Retrofit 中，将 Call 代理到 ExecutorCallbackCall 中，从而实现 Executor 功能。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;Converter 接口：实现数据序列化的接口，包含 request 时，model 到 Http 数据的转行和 response 是，Http 数据到 model 的转换。&lt;/li&gt;
+&lt;li&gt;BuiltInConverters 类： Retrofit 内部的一个 Converter 实现类，包含一些默认的实现，eg：StringConverter，VoidResponseBodyConverter，StreamingResponseBodyConverter，BufferingResponseBodyConverter。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;ServiceMethod 类：把每次对 Retrofit 传入接口的方法调用定义为 invokeMethod ，ServiceMethod 主要作用就是把 invokeMethod 转换成一次 Http Request，在这里的实现是转成 OKhttp 的 Request，ServiceMethod 包含 invokeMethod 必要信息：比如 bashUrl，请求的 header，请求的参数，注解等等。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;可以说 Retrofit 的主要逻辑都在 ServiceMethod 类中，包含所有注解的解析，参数的获取，Converter 和 CallAdapter 的检索配置等等。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h4&gt;其他的类：&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Callback 接口：异步请求时候用的回调接口&lt;/li&gt;
+&lt;li&gt;RequestBuilder 类：可以用来创建 OkHttp Request 的 Builder&lt;/li&gt;
+&lt;li&gt;Response 类：表示一个 Http response&lt;/li&gt;
+&lt;li&gt;ParameterHandler 抽象类：参数添加抽象类，通过对 RequestBuilder 的封装，把 Http 中传输的添加划分得更加详细了。&lt;/li&gt;
+&lt;li&gt;Platform 类：针对不同平台进行兼容处理的类。&lt;/li&gt;
+&lt;li&gt;packeage Http ：Http 包下是所有 Retrofit 支持的注解&lt;/li&gt;
+&lt;li&gt;Utils 类：工具类&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;原理&lt;/h3&gt;
+&lt;p&gt;Retrofit 使用的关键技术就是 Java 的动态代理，对接口中每个方法的调用进行代理，从而实现了最终只要写接口和注解就可以进行 Http 请求的效果。这个主要的流程可以直接去看 Retrofit.java 的 crate() 函数，具体如下：&lt;/p&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;public&lt;/span&gt; &amp;lt;T&amp;gt; &lt;span class=&quot;function&quot;&gt;T &lt;span class=&quot;title&quot;&gt;create&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;final&lt;/span&gt; Class&amp;lt;T&amp;gt; service)&lt;/span&gt; &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;comment&quot;&gt;//检查接口合法性&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    Utils.validateServiceInterface(service);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (validateEagerly) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        eagerlyValidateMethods(service);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;comment&quot;&gt;//Java 动态代理 method 的调用&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; (T) Proxy.newProxyInstance(service.getClassLoader(), &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; Class&amp;lt;?&amp;gt;[]&amp;#123;service&amp;#125;,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; InvocationHandler() &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;final&lt;/span&gt; Platform platform = Platform.get();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                &lt;span class=&quot;meta&quot;&gt;@Override&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                &lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;public&lt;/span&gt; Object &lt;span class=&quot;title&quot;&gt;invoke&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(Object proxy, Method method, Object... args)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                        &lt;span class=&quot;keyword&quot;&gt;throws&lt;/span&gt; Throwable &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;comment&quot;&gt;// If the method is a method from Object then defer to normal invocation.&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (method.getDeclaringClass() == Object.class) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                        &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; method.invoke(&lt;span class=&quot;keyword&quot;&gt;this&lt;/span&gt;, args);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (platform.isDefaultMethod(method)) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                        &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; platform.invokeDefaultMethod(method, service, proxy, args);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;comment&quot;&gt;//将 method 转为 ServiceMethod&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    ServiceMethod serviceMethod = loadServiceMethod(method);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;comment&quot;&gt;//根据 ServiceMethod 生成对应的 OkHttpCall&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    OkHttpCall okHttpCall = &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; OkHttpCall&amp;lt;&amp;gt;(serviceMethod, args);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;comment&quot;&gt;//根据 CallAdapter 对 Call 进行转换&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    &lt;span class=&quot;keyword&quot;&gt;return&lt;/span&gt; serviceMethod.callAdapter.adapt(okHttpCall);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &amp;#125;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;blockquote&gt;
+&lt;p&gt;基于 Retrofit 2.0.1 版&lt;/p&gt;
+&lt;/blockquote&gt;
+    
+    </summary>
+    
+    
+  </entry>
   
   <entry>
     <title>Android Framework 层 中的 Binder 机制</title>

@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Retrofit 分析 · baitouwei</title><meta name="description" content="Retrofit 分析 - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">Retrofit 分析</h1><div class="post-time">Apr 13, 2016</div><div class="post-content"><blockquote>
+<p>基于 Retrofit 2.0.1 版</p>
+</blockquote>
+<a id="more"></a>
+<h3>源码结构</h3>
+<h4>入口 Retrofit 类：</h4>
+<p>Retrofit 类是这个库的入口，整个库所支持的特性都可以在这里看到。想看看它的 Builder 几个主要方法：</p>
+<ul>
+<li>create（final Class<t> service）：这里是整个库的入口。传入一个接口，Retrofit 通过动态代理，最终将接口转为一个 Call 并返回给使用者。</t></li>
+<li>callbackExecutor（Executor executor）：配置回调用的 Executor，Executor 可以对回调进行调度。</li>
+<li>addConverterFactory(Converter.Factory factory)，addCallAdapterFactory(CallAdapter.Factory factory)：配置对应的 Converter 或 CallAdapter，这个会在核心接口里面说。</li>
+</ul>
+<h4>几个核心接口和类：</h4>
+<ul>
+<li>Call 接口：表示一次 http 请求，包含 request 和 response。可以通过 <code>execute</code> 方法进行异步请求，<code>enqueue</code> 方法进行同步请求，<code>cancle</code> 方法取消请求和回调。</li>
+<li>OkHttpCall 类：Call 接口的 OKHttp 实现版。</li>
+</ul>
+<hr>
+<ul>
+<li>CallAdapter 接口：提供了 Call 到其他类型数据的转换，可以通过 <code>Retrofit.Builder.addCallAdapterFactory()</code> 进行配。比如 adapter-rxjava 的实现，就是通过 CallAdapter 接口将 Call 转换为 Observable 的。</li>
+<li>DefaultCallAdapterFactory 类：TODO</li>
+<li>ExecutorCallAdapterFactory 类：如果在 Retrofit 中指定 callbackExecutor 的话，Retrofit 会默认添加添加一个 ExecutorCallAdapterFactory 到 Retrofit 中，将 Call 代理到 ExecutorCallbackCall 中，从而实现 Executor 功能。</li>
+</ul>
+<hr>
+<ul>
+<li>Converter 接口：实现数据序列化的接口，包含 request 时，model 到 Http 数据的转行和 response 是，Http 数据到 model 的转换。</li>
+<li>BuiltInConverters 类： Retrofit 内部的一个 Converter 实现类，包含一些默认的实现，eg：StringConverter，VoidResponseBodyConverter，StreamingResponseBodyConverter，BufferingResponseBodyConverter。</li>
+</ul>
+<hr>
+<ul>
+<li>ServiceMethod 类：把每次对 Retrofit 传入接口的方法调用定义为 invokeMethod ，ServiceMethod 主要作用就是把 invokeMethod 转换成一次 Http Request，在这里的实现是转成 OKhttp 的 Request，ServiceMethod 包含 invokeMethod 必要信息：比如 bashUrl，请求的 header，请求的参数，注解等等。</li>
+</ul>
+<blockquote>
+<p>可以说 Retrofit 的主要逻辑都在 ServiceMethod 类中，包含所有注解的解析，参数的获取，Converter 和 CallAdapter 的检索配置等等。</p>
+</blockquote>
+<h4>其他的类：</h4>
+<ul>
+<li>Callback 接口：异步请求时候用的回调接口</li>
+<li>RequestBuilder 类：可以用来创建 OkHttp Request 的 Builder</li>
+<li>Response 类：表示一个 Http response</li>
+<li>ParameterHandler 抽象类：参数添加抽象类，通过对 RequestBuilder 的封装，把 Http 中传输的添加划分得更加详细了。</li>
+<li>Platform 类：针对不同平台进行兼容处理的类。</li>
+<li>packeage Http ：Http 包下是所有 Retrofit 支持的注解</li>
+<li>Utils 类：工具类</li>
+</ul>
+<h3>原理</h3>
+<p>Retrofit 使用的关键技术就是 Java 的动态代理，对接口中每个方法的调用进行代理，从而实现了最终只要写接口和注解就可以进行 Http 请求的效果。这个主要的流程可以直接去看 Retrofit.java 的 crate() 函数，具体如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">create</span><span class="params">(<span class="keyword">final</span> Class&lt;T&gt; service)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//检查接口合法性</span></span><br><span class="line">    Utils.validateServiceInterface(service);</span><br><span class="line">    <span class="keyword">if</span> (validateEagerly) &#123;</span><br><span class="line">        eagerlyValidateMethods(service);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//Java 动态代理 method 的调用</span></span><br><span class="line">    <span class="keyword">return</span> (T) Proxy.newProxyInstance(service.getClassLoader(), <span class="keyword">new</span> Class&lt;?&gt;[]&#123;service&#125;,</span><br><span class="line">            <span class="keyword">new</span> InvocationHandler() &#123;</span><br><span class="line">                <span class="keyword">private</span> <span class="keyword">final</span> Platform platform = Platform.get();</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object... args)</span></span><br><span class="line">                        <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">                    <span class="comment">// If the method is a method from Object then defer to normal invocation.</span></span><br><span class="line">                    <span class="keyword">if</span> (method.getDeclaringClass() == Object.class) &#123;</span><br><span class="line">                        <span class="keyword">return</span> method.invoke(<span class="keyword">this</span>, args);</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (platform.isDefaultMethod(method)) &#123;</span><br><span class="line">                        <span class="keyword">return</span> platform.invokeDefaultMethod(method, service, proxy, args);</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">//将 method 转为 ServiceMethod</span></span><br><span class="line">                    ServiceMethod serviceMethod = loadServiceMethod(method);</span><br><span class="line">                    <span class="comment">//根据 ServiceMethod 生成对应的 OkHttpCall</span></span><br><span class="line">                    OkHttpCall okHttpCall = <span class="keyword">new</span> OkHttpCall&lt;&gt;(serviceMethod, args);</span><br><span class="line">                    <span class="comment">//根据 CallAdapter 对 Call 进行转换</span></span><br><span class="line">                    <span class="keyword">return</span> serviceMethod.callAdapter.adapt(okHttpCall);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</div></article></div></section><footer><div class="paginator"><a href="/2016/04/08/Android-Framework-层-中的-Binder-机制/" class="next">NEXT</a></div><div class="copyright"><p>© 2014 - 2016 <a href="http://www.baitouwei.com">baitouwei</a></p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-53474515-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?98fa5f48921f76f2dd519a60ebb6d5ab";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
