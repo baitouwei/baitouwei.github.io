@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.baitouwei.com/"/>
-  <updated>2016-04-13T07:34:10.000Z</updated>
+  <updated>2016-04-20T15:35:13.000Z</updated>
   <id>http://www.baitouwei.com/</id>
   
   <author>
@@ -16,11 +16,131 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>App 缓存方案：Http 缓存</title>
+    <link href="http://www.baitouwei.com/2016/04/20/App-%E7%BC%93%E5%AD%98%E6%96%B9%E6%A1%88%EF%BC%9AHttp-%E7%BC%93%E5%AD%98/"/>
+    <id>http://www.baitouwei.com/2016/04/20/App-缓存方案：Http-缓存/</id>
+    <published>2016-04-20T15:27:43.000Z</published>
+    <updated>2016-04-20T15:35:13.000Z</updated>
+    
+    <content type="html">&lt;p&gt;最近考虑在 App 中加入缓存机制，主要是出于两点考虑：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;优化体验。App 启动的时候可以使用缓存数据去填充页面，一进来就出现空白的加载页面。&lt;/li&gt;
+&lt;li&gt;为用户在断网情况下继续提供数据浏览。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;综合考虑后，感觉使用 Http 提供的缓存机制比较合适。主要是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;灵活。客户端和服务器都可以对缓存进行控制。&lt;/li&gt;
+&lt;li&gt;集成简单。由于 App 使用了 OkHttp，本身就支持 Http 的缓存机制，而且由于是在 Http 层对缓存进行支持，客户端不用添加其他的判断逻辑对是否缓存进行判断。&lt;/li&gt;
+&lt;li&gt;跨平台。由于是在 Http 上进行支持的，所以要 iOS 端也可以做相应的支持。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;缺点的话，由于 Http 的缓存是基于文件系统的，也就是 key-value 模式，缓存的粒度比较大，不能实现一些元数据的公用。不过对目前的 App 来说够用了。下面都是对 Http 的缓存机制相关调研。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;h2&gt;缓存流程&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;/image/CacheFlow.png&quot; alt=&quot;CacheFlow&quot;&gt;&lt;/p&gt;
+&lt;h2&gt;Cache-Control 相关头域&lt;/h2&gt;
+&lt;p&gt;Cache-Control 头域分两种，一种用于 Request 的，一种是用于 Response 的，由于 Request 和 Response 都可以有 Cache-Control 头域，所以 Client 和 Server 都可以对缓存机制进行对应的控制。比如当 C 端要强制更新的时候，可以发送带 &lt;code&gt;Cache control: no-store&lt;/code&gt; 的 Request。&lt;/p&gt;
+&lt;h4&gt;Request Cache-Control&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&amp;quot;no-cache&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;no-store&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;max-age&amp;quot; &amp;quot;=&amp;quot; delta-seconds&lt;/li&gt;
+&lt;li&gt;&amp;quot;max-stale&amp;quot; &amp;quot;=&amp;quot; delta-seconds&lt;/li&gt;
+&lt;li&gt;&amp;quot;min-fresh&amp;quot; &amp;quot;=&amp;quot; delta-seconds&lt;/li&gt;
+&lt;li&gt;&amp;quot;no-transform&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;only-if-cached&amp;quot;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Response Cache-Control&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&amp;quot;public&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;private&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;no-cache&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;no-store&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;no-transform&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;must-revalidate&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;proxy-revalidate&amp;quot;&lt;/li&gt;
+&lt;li&gt;&amp;quot;max-age&amp;quot; &amp;quot;=&amp;quot; delta-seconds&lt;/li&gt;
+&lt;li&gt;&amp;quot;s-maxage&amp;quot; &amp;quot;=&amp;quot; delta-seconds&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;不同头域的意义&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Cache-Control:public        ：该 response 为公有缓存&lt;/li&gt;
+&lt;li&gt;Cache-Control:private       ：该 response 为私有缓存&lt;/li&gt;
+&lt;li&gt;Cache-Control:no-cache      ：可以缓存 response，但是必须要经过新鲜度再验证响应后才可以返回缓存。&lt;/li&gt;
+&lt;li&gt;Cache-Control:no-store      ：对应的 resquest/response 不允许存储，这里的不允许存储即：不允许进行任何持久化存储，如果有存在非持久化存储，也要尽快消除。&lt;/li&gt;
+&lt;li&gt;Cache-Control:s-maxage      : 意思和 max-age 类似，但是只用于公有缓存，在共有缓存中使用的时候会覆盖 max-age 的值&lt;/li&gt;
+&lt;li&gt;Cache-Control:max-age = s   ：指定相对过期日期，单位为秒&lt;/li&gt;
+&lt;li&gt;Expires                     ：指定绝对过期日期&lt;/li&gt;
+&lt;li&gt;Cache-Control:max-stale = s ：过期后的 s 秒内缓存可以继续使用&lt;/li&gt;
+&lt;li&gt;Cache-Control:min-fresh = s ：至少在 s 秒内缓存要保持新鲜&lt;/li&gt;
+&lt;li&gt;Cache-Control:must-revalidate      : 强制缓存重新进行新鲜度验证，因为 http 头中存在一些头域会改变缓存原本的失效时间（比如 request 中的 max-stale），而通过这个头域可以强制缓存进行更新，如果在进行新鲜度验证的时候不能连接到服务器，则返回 504 Gateway Timeout 错误。&lt;/li&gt;
+&lt;li&gt;Cache-Control:no-transform      : 部分网络代理为了提高性能会对图片等文档进行转换处理(比如压缩)，no-transform 可以强制要求网络代理不要对资源进行转换。&lt;/li&gt;
+&lt;li&gt;Cache-Control:only-if-cached      : 该头域表示不进行与网络相关的交互，只返回已经缓存且满足要求的数据，否则的话返回 504 错误。&lt;/li&gt;
+&lt;li&gt;Cache-Control:proxy-revalidate      : 和 must-revalidate 类似，只是特定用于公共缓存的。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;PS:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;max-age 的优先级比 Expires 高。
+See:&lt;a href=&quot;http://stackoverflow.com/questions/7549177/expires-vs-max-age-which-one-takes-priority-if-both-are-declared-in-a-http-resp&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;参考&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;max-age，max-stale 和 min-fresh 的关系：缓存使用期 age 表示缓存自 Server 将其发出（或最后一次被服务器再验证）之后过去的时间，则如果 age + min-fresh &amp;lt; max-age，缓存未过期；如果 age + min-fresh &amp;gt;= max-age &amp;amp;&amp;amp; age + min-fresh &amp;lt; max-age + max-stale，则虽然缓存过期了，但是缓存继续可以使用，只是在头部添加 110 警告码；如果 age + min-fresh &amp;gt;= max-age + max-stale，则缓存过期且不可使用。缓存使用期 age 的计算可以参考《Http 权威指南》的 7.11.2 节，具体关于缓存使用期和新鲜生存期的问题可以参考 7.11 节。（&lt;a href=&quot;http://stackoverflow.com/questions/33818854/what-is-difference-between-max-age-and-max-stale-in-cache-control-mechanism&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;参考1&lt;/a&gt;,&lt;a href=&quot;https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/http/CacheStrategy.java&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;参考2&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;no-cache 和 max-age = 0 的区别：&lt;a href=&quot;http://stackoverflow.com/questions/1046966/whats-the-difference-between-cache-control-max-age-0-and-no-cache&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;参考&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;no-cache 和 no-store 区别：no-cache 实际会进行缓存，只是在缓存响应之前会先进行一次新鲜度再验证（浏览器的 f5 刷新）；而 no-store 不会进行缓存，每次都是向获取服务器的最新数据（浏览器的强制刷新）。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;新鲜度再验证的实现&lt;/h2&gt;
+&lt;p&gt;有两种实现方式最近修改日期（If-Modified-Since)和实体标签（ETag）验证。
+相关首部：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;If-Modified-Since:&lt;data&gt;&lt;/data&gt;&lt;/li&gt;
+&lt;li&gt;If-Unmodified-Sinece:&lt;data&gt;&lt;/data&gt;&lt;/li&gt;
+&lt;li&gt;If-None-Match:&lt;tags&gt;&lt;/tags&gt;&lt;/li&gt;
+&lt;li&gt;If-Range:&amp;lt;data|tags&amp;gt;&lt;/li&gt;
+&lt;li&gt;If-Match:&lt;tags&gt;&lt;/tags&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;最近修改日期（If-Modified-Since）验证：&lt;/h4&gt;
+&lt;p&gt;一般通过 If-Modified-Since 配和 Last-Modified 来实现验证，Last-Modified &amp;gt;= If-Modified-Since 则新鲜度过期。也可配合 If-Unmodified-Sinece。&lt;/p&gt;
+&lt;h4&gt;实体标签（ETag）验证：&lt;/h4&gt;
+&lt;p&gt;通过特定标签对比进行验证，比如 ETag 可以用来存版本号，这样就可以通过版本号对比查看新鲜度，可以配合 If-None-Match 来使用。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;主要使用前两个 If-Modified-Since 和 If-None-Match 头域，详细参考《Http 权威指南》的 7.8.5,7.8.6 节&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h4&gt;试探性过期&lt;/h4&gt;
+&lt;p&gt;当 response 中没有 Cache-Control:max-age 和 Expires 的时候，缓存可以计算出一个试探性最大使用期。常用算法 LM—Factor 算法。&lt;/p&gt;
+&lt;h2&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.5&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Header Field Definitions&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://www.mobify.com/blog/beginners-guide-to-http-cache-headers/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;A Beginner&#39;s Guide to HTTP Cache Headers&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/http/CacheStrategy.java&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;OkHttp 源码&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;《Http 权威指南》&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近考虑在 App 中加入缓存机制，主要是出于两点考虑：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;优化体验。App 启动的时候可以使用缓存数据去填充页面，一进来就出现空白的加载页面。&lt;/li&gt;
+&lt;li&gt;为用户在断网情况下继续提供数据浏览。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;综合考虑后，感觉使用 Http 提供的缓存机制比较合适。主要是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;灵活。客户端和服务器都可以对缓存进行控制。&lt;/li&gt;
+&lt;li&gt;集成简单。由于 App 使用了 OkHttp，本身就支持 Http 的缓存机制，而且由于是在 Http 层对缓存进行支持，客户端不用添加其他的判断逻辑对是否缓存进行判断。&lt;/li&gt;
+&lt;li&gt;跨平台。由于是在 Http 上进行支持的，所以要 iOS 端也可以做相应的支持。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;缺点的话，由于 Http 的缓存是基于文件系统的，也就是 key-value 模式，缓存的粒度比较大，不能实现一些元数据的公用。不过对目前的 App 来说够用了。下面都是对 Http 的缓存机制相关调研。&lt;/p&gt;
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
     <title>Retrofit 分析</title>
     <link href="http://www.baitouwei.com/2016/04/13/Retrofit-%E5%88%86%E6%9E%90/"/>
     <id>http://www.baitouwei.com/2016/04/13/Retrofit-分析/</id>
     <published>2016-04-13T07:32:57.000Z</published>
-    <updated>2016-04-13T07:34:10.000Z</updated>
+    <updated>2016-04-13T07:53:44.000Z</updated>
     
     <content type="html">&lt;blockquote&gt;
 &lt;p&gt;基于 Retrofit 2.0.1 版&lt;/p&gt;

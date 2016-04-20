@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> App 缓存方案：Http 缓存 · baitouwei</title><meta name="description" content="App 缓存方案：Http 缓存 - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">App 缓存方案：Http 缓存</h1><div class="post-time">Apr 20, 2016</div><div class="post-content"><p>最近考虑在 App 中加入缓存机制，主要是出于两点考虑：</p>
+<ol>
+<li>优化体验。App 启动的时候可以使用缓存数据去填充页面，一进来就出现空白的加载页面。</li>
+<li>为用户在断网情况下继续提供数据浏览。</li>
+</ol>
+<p>综合考虑后，感觉使用 Http 提供的缓存机制比较合适。主要是：</p>
+<ol>
+<li>灵活。客户端和服务器都可以对缓存进行控制。</li>
+<li>集成简单。由于 App 使用了 OkHttp，本身就支持 Http 的缓存机制，而且由于是在 Http 层对缓存进行支持，客户端不用添加其他的判断逻辑对是否缓存进行判断。</li>
+<li>跨平台。由于是在 Http 上进行支持的，所以要 iOS 端也可以做相应的支持。</li>
+</ol>
+<p>缺点的话，由于 Http 的缓存是基于文件系统的，也就是 key-value 模式，缓存的粒度比较大，不能实现一些元数据的公用。不过对目前的 App 来说够用了。下面都是对 Http 的缓存机制相关调研。</p>
+<a id="more"></a>
+<h2>缓存流程</h2>
+<p><img src="/image/CacheFlow.png" alt="CacheFlow"></p>
+<h2>Cache-Control 相关头域</h2>
+<p>Cache-Control 头域分两种，一种用于 Request 的，一种是用于 Response 的，由于 Request 和 Response 都可以有 Cache-Control 头域，所以 Client 和 Server 都可以对缓存机制进行对应的控制。比如当 C 端要强制更新的时候，可以发送带 <code>Cache control: no-store</code> 的 Request。</p>
+<h4>Request Cache-Control</h4>
+<ul>
+<li>&quot;no-cache&quot;</li>
+<li>&quot;no-store&quot;</li>
+<li>&quot;max-age&quot; &quot;=&quot; delta-seconds</li>
+<li>&quot;max-stale&quot; &quot;=&quot; delta-seconds</li>
+<li>&quot;min-fresh&quot; &quot;=&quot; delta-seconds</li>
+<li>&quot;no-transform&quot;</li>
+<li>&quot;only-if-cached&quot;</li>
+</ul>
+<h4>Response Cache-Control</h4>
+<ul>
+<li>&quot;public&quot;</li>
+<li>&quot;private&quot;</li>
+<li>&quot;no-cache&quot;</li>
+<li>&quot;no-store&quot;</li>
+<li>&quot;no-transform&quot;</li>
+<li>&quot;must-revalidate&quot;</li>
+<li>&quot;proxy-revalidate&quot;</li>
+<li>&quot;max-age&quot; &quot;=&quot; delta-seconds</li>
+<li>&quot;s-maxage&quot; &quot;=&quot; delta-seconds</li>
+</ul>
+<h4>不同头域的意义</h4>
+<ul>
+<li>Cache-Control:public        ：该 response 为公有缓存</li>
+<li>Cache-Control:private       ：该 response 为私有缓存</li>
+<li>Cache-Control:no-cache      ：可以缓存 response，但是必须要经过新鲜度再验证响应后才可以返回缓存。</li>
+<li>Cache-Control:no-store      ：对应的 resquest/response 不允许存储，这里的不允许存储即：不允许进行任何持久化存储，如果有存在非持久化存储，也要尽快消除。</li>
+<li>Cache-Control:s-maxage      : 意思和 max-age 类似，但是只用于公有缓存，在共有缓存中使用的时候会覆盖 max-age 的值</li>
+<li>Cache-Control:max-age = s   ：指定相对过期日期，单位为秒</li>
+<li>Expires                     ：指定绝对过期日期</li>
+<li>Cache-Control:max-stale = s ：过期后的 s 秒内缓存可以继续使用</li>
+<li>Cache-Control:min-fresh = s ：至少在 s 秒内缓存要保持新鲜</li>
+<li>Cache-Control:must-revalidate      : 强制缓存重新进行新鲜度验证，因为 http 头中存在一些头域会改变缓存原本的失效时间（比如 request 中的 max-stale），而通过这个头域可以强制缓存进行更新，如果在进行新鲜度验证的时候不能连接到服务器，则返回 504 Gateway Timeout 错误。</li>
+<li>Cache-Control:no-transform      : 部分网络代理为了提高性能会对图片等文档进行转换处理(比如压缩)，no-transform 可以强制要求网络代理不要对资源进行转换。</li>
+<li>Cache-Control:only-if-cached      : 该头域表示不进行与网络相关的交互，只返回已经缓存且满足要求的数据，否则的话返回 504 错误。</li>
+<li>Cache-Control:proxy-revalidate      : 和 must-revalidate 类似，只是特定用于公共缓存的。</li>
+</ul>
+<blockquote>
+<p>PS:</p>
+<ol>
+<li>max-age 的优先级比 Expires 高。
+See:<a href="http://stackoverflow.com/questions/7549177/expires-vs-max-age-which-one-takes-priority-if-both-are-declared-in-a-http-resp" target="_blank" rel="external">参考</a></li>
+<li>max-age，max-stale 和 min-fresh 的关系：缓存使用期 age 表示缓存自 Server 将其发出（或最后一次被服务器再验证）之后过去的时间，则如果 age + min-fresh &lt; max-age，缓存未过期；如果 age + min-fresh &gt;= max-age &amp;&amp; age + min-fresh &lt; max-age + max-stale，则虽然缓存过期了，但是缓存继续可以使用，只是在头部添加 110 警告码；如果 age + min-fresh &gt;= max-age + max-stale，则缓存过期且不可使用。缓存使用期 age 的计算可以参考《Http 权威指南》的 7.11.2 节，具体关于缓存使用期和新鲜生存期的问题可以参考 7.11 节。（<a href="http://stackoverflow.com/questions/33818854/what-is-difference-between-max-age-and-max-stale-in-cache-control-mechanism" target="_blank" rel="external">参考1</a>,<a href="https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/http/CacheStrategy.java" target="_blank" rel="external">参考2</a>）</li>
+<li>no-cache 和 max-age = 0 的区别：<a href="http://stackoverflow.com/questions/1046966/whats-the-difference-between-cache-control-max-age-0-and-no-cache" target="_blank" rel="external">参考</a></li>
+<li>no-cache 和 no-store 区别：no-cache 实际会进行缓存，只是在缓存响应之前会先进行一次新鲜度再验证（浏览器的 f5 刷新）；而 no-store 不会进行缓存，每次都是向获取服务器的最新数据（浏览器的强制刷新）。</li>
+</ol>
+</blockquote>
+<h2>新鲜度再验证的实现</h2>
+<p>有两种实现方式最近修改日期（If-Modified-Since)和实体标签（ETag）验证。
+相关首部：</p>
+<ul>
+<li>If-Modified-Since:<data></data></li>
+<li>If-Unmodified-Sinece:<data></data></li>
+<li>If-None-Match:<tags></tags></li>
+<li>If-Range:&lt;data|tags&gt;</li>
+<li>If-Match:<tags></tags></li>
+</ul>
+<h4>最近修改日期（If-Modified-Since）验证：</h4>
+<p>一般通过 If-Modified-Since 配和 Last-Modified 来实现验证，Last-Modified &gt;= If-Modified-Since 则新鲜度过期。也可配合 If-Unmodified-Sinece。</p>
+<h4>实体标签（ETag）验证：</h4>
+<p>通过特定标签对比进行验证，比如 ETag 可以用来存版本号，这样就可以通过版本号对比查看新鲜度，可以配合 If-None-Match 来使用。</p>
+<blockquote>
+<p>主要使用前两个 If-Modified-Since 和 If-None-Match 头域，详细参考《Http 权威指南》的 7.8.5,7.8.6 节</p>
+</blockquote>
+<h4>试探性过期</h4>
+<p>当 response 中没有 Cache-Control:max-age 和 Expires 的时候，缓存可以计算出一个试探性最大使用期。常用算法 LM—Factor 算法。</p>
+<h2>参考</h2>
+<ul>
+<li><a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9.5" target="_blank" rel="external">Header Field Definitions</a></li>
+<li><a href="http://www.mobify.com/blog/beginners-guide-to-http-cache-headers/" target="_blank" rel="external">A Beginner's Guide to HTTP Cache Headers</a></li>
+<li><a href="https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/http/CacheStrategy.java" target="_blank" rel="external">OkHttp 源码</a></li>
+<li>《Http 权威指南》</li>
+</ul>
+</div></article></div></section><footer><div class="paginator"><a href="/2016/04/13/Retrofit-分析/" class="next">NEXT</a></div><div data-thread-key="2016/04/20/App-缓存方案：Http-缓存/" data-title="App 缓存方案：Http 缓存" data-url="http://www.baitouwei.com/2016/04/20/App-缓存方案：Http-缓存/" data-author-key="1" class="ds-thread"></div><script>var duoshuoQuery = {short_name:"baitouwei"};
+(function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+     || document.getElementsByTagName('body')[0]).appendChild(ds);
+})();
+
+</script><div class="copyright"><p>© 2014 - 2016 <a href="http://www.baitouwei.com">baitouwei</a></p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-53474515-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?98fa5f48921f76f2dd519a60ebb6d5ab";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
