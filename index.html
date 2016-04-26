@@ -7,7 +7,7 @@
 <ol>
 <li>灵活。客户端和服务器都可以对缓存进行控制。</li>
 <li>集成简单。由于 App 使用了 OkHttp，本身就支持 Http 的缓存机制，而且由于是在 Http 层对缓存进行支持，客户端不用添加其他的判断逻辑对是否缓存进行判断。</li>
-<li>跨平台。由于是在 Http 上进行支持的，所以要 iOS 端也可以做相应的支持。</li>
+<li>跨平台。由于是在 Http 上进行支持的，所以如果需要, iOS 端也可以做相应的支持。</li>
 </ol>
 <p>缺点的话，由于 Http 的缓存是基于文件系统的，也就是 key-value 模式，缓存的粒度比较大，不能实现一些元数据的公用。不过对目前的 App 来说够用了。下面都是对 Http 的缓存机制相关调研。</p></div><a href="/2016/04/20/App-缓存方案：Http-缓存/" class="read-more">...more</a></article></li><li class="post-list-item"><article class="post-block"><h2 class="post-title"><a href="/2016/04/13/Retrofit-分析/" class="post-title-link">Retrofit 分析</a></h2><div class="post-time">Apr 13, 2016</div><div class="post-content"><blockquote>
 <p>基于 Retrofit 2.0.1 版</p>

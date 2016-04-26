@@ -2,18 +2,18 @@
 <a id="more"></a>
 <h4>Immutable（不可变） Vs Mutable（可变）</h4>
 <ul>
-<li>Mutable Objects：即持有一个实例对象的引用时，引用指向的对象<strong>不会</strong>发生改变。</li>
-<li>Immutable Objects：即持有一个实例对象的引用时，引用指向的对象<strong>可以</strong>发生改变。
-简而言之，Mutable 和 Immutable 的区别就是在对象的值发生改变的时候，对象会不会对新值生成一个新的引用，如果会，则是 Immutable；否则则是 Mutable。</li>
+<li>Mutable Objects：即持有一个实例对象的引用时，引用指向的对象<strong>可以</strong>发生改变。</li>
+<li>Immutable Objects：即持有一个实例对象的引用时，引用指向的对象<strong>不可以</strong>发生改变。</li>
 </ul>
+<p>简而言之，Mutable 和 Immutable 的区别就是在对象的值发生改变的时候，对象会不会对新值生成一个新的引用，如果会，则是 Mmutable；否则则是 Immutable。</p>
 <p>比如：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Mutable</span></span><br><span class="line">Point myPoint = <span class="keyword">new</span> Point( <span class="number">0</span>, <span class="number">0</span> );</span><br><span class="line">System.out.println( myPoint );</span><br><span class="line">myPoint.setLocation( <span class="number">1.0</span>, <span class="number">0.0</span> );</span><br><span class="line">System.out.println( myPoint );</span><br><span class="line"></span><br><span class="line"><span class="comment">//Immutable</span></span><br><span class="line">String myString = <span class="keyword">new</span> String( <span class="string">"old String"</span> );</span><br><span class="line">System.out.println( myString );</span><br><span class="line">myString.replaceAll( <span class="string">"old"</span>, <span class="string">"new"</span> );</span><br><span class="line">System.out.println( myString );</span><br></pre></td></tr></table></figure>
 <p>result:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">java.awt.Point[0.0, 0.0]</span><br><span class="line">java.awt.Point[1.0, 0.0]</span><br><span class="line">old String</span><br><span class="line">old String</span><br></pre></td></tr></table></figure>
 <h4>Unmodifiable（不可修改） Vs Modifiable（可修改）</h4>
 <ul>
-<li>Unmodifiable：即变量值<strong>可以</strong>被修改</li>
-<li>Modifiable：即变量值<strong>不可以</strong>被修改</li>
+<li>Unmodifiable：即变量值<strong>不可以</strong>被修改</li>
+<li>Modifiable：即变量值<strong>可以</strong>被修改</li>
 </ul>
 <h4>Immutable VS Modifiable</h4>
 <p>Immutable 和 Modifiable 讨论的是不同的内容：</p>
