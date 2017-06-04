@@ -1,0 +1,136 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Android 性能优化笔记 · baitouwei</title><meta name="description" content="Android 性能优化笔记 - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">Android 性能优化笔记</h1><div class="post-time">Jun 5, 2017</div><div class="post-content"><h3>性能优化常用工具</h3>
+<ul>
+<li>Systrace：<br>
+通过 systrace 可对整个系统的运行状况有一个总的大体诊断
+<ul>
+<li>systrace:user atrace and frace to out an html file</li>
+<li>atrace:andriod framework trace</li>
+<li>ftrace:linux kernel trace</li>
+</ul>
+</li>
+</ul>
+<a id="more"></a>
+<ul>
+<li>Traceview<br>
+分析代码的执行及耗时等</li>
+<li>MAT<br>
+分析内存分析使用</li>
+<li>Allocation Tracker<br>
+分析内存申请使用</li>
+<li>Hierarchy Viewer<br>
+分析视图组成</li>
+<li>GPU Profiling<br>
+分析 GPU 使用情况</li>
+<li>Menory Profiling</li>
+<li>Network Profiling</li>
+</ul>
+<h3>性能优化</h3>
+<h4>多线程</h4>
+<ul>
+<li>AsyncTask：默认所有的 AsyncTask 共用同一个 SERIAL_EXECUTOR，因此每个 AsyncTask 之间是阻塞的，而且每个 AsyncTask 都是一次性的，所以 Async 比较适合执行短时间的异步任务</li>
+<li>HanlderThread：如果需要长时间持有一个线程，可以使用 HanlderThread，</li>
+<li>ThreadPool：适合执行大量的并行任务</li>
+<li>IntentServer：HanlderThread 和 Server 的混合</li>
+</ul>
+<blockquote>
+<p>使用线程的时候需要注意根据执行的任务设置 thread priority，这样有助于 CPU 进行线程调度，特别是使用 HanlderThread 的时候要注意设置 thread priority。</p>
+</blockquote>
+<h4>内存优化</h4>
+<ul>
+<li>避免大量频繁申请临时内存：大量申请临时内存容易引起 GC，而 GC 的时候后会导致整个系统暂停
+<ul>
+<li>注意 Autoboxing<br>
+Java 中 primitive 类型的数据会有 autobox，而每一次 autobox 都会生成一个新的对象。可以使用 SparseArray Family（SparseArray、SparseBooleanArray、SparseIntArray、SparseLongArray、LongSparseArray）替换 HashMap 避免 autobox，原理和 ArrayMap 类型。<br>
+<a href="https://stackoverflow.com/questions/24836728/android-sparsearray-with-string-key" target="_blank" rel="external">Why don't have StringSparseArray?</a><br>
+<a href="https://stackoverflow.com/questions/25560629/sparsearray-vs-hashmap" target="_blank" rel="external">SparseArray vs HashMap</a></li>
+<li>Index vs Iterate：允许的情况下，避免使用 Iterate。<br>
+相对于直接使用下标定位列表，使用 Iterate 在每次循环的时候都会申请额外的临时内存。当然，只有在列表比较大的时候才需要这种优化。</li>
+<li>使用对象池避免内存申请</li>
+</ul>
+</li>
+<li>使用 ArrayMap：<br>
+HashMap VS ArrayMap：
+<ul>
+<li>内存消耗：HashMap 由于采用 hash(key) 映射 table 下标，导致 table 的空间没有利用完全，而且即使 HashMap 未空的时候，也会默认为 table 默认分配一定大小，所以内存利用率会低点；而 ArrayMap 维护两个 Array（HashArray 和 KeyValueArray，两者通过 KeyIndex=(hashIndex*2)+1 进行映射），从而提高了内存使用率</li>
+<li>扩容：HashMap 扩容的时候需要对整个列表重新进行 hash，效率比较低；而 ArrayMap 扩容的时候直接 copy 一份数据，效率比较高</li>
+<li>查找：HashMap 由于采用 hash 映射，所以查找效率较高；而 ArrayMap 本质上使用时二分搜索进行查找，效率相对低点</li>
+<li>删除：HashMap 使用 hash 映射或链表操作删除元素，效率较高；ArrayMap 删除元素的时候需要对整个数组进行分段 copy 效率较低
+ArrayMap 相对于 HashMap 使用运行效率换取内存空间，一般来说大小 1k 以内都执行效率的影响看忽略不计。</li>
+</ul>
+</li>
+<li>避免 Enums：<br>
+每个 Enums 本质上都是一个 final class，所以占用的内存会比直接使用 int 多，如果可以使用 int + annotation 来实现的话，就没必要使用 Enums</li>
+<li>避免内存泄露
+<ul>
+<li>内存泄露常见场景
+<ul>
+<li>异步回调：比如匿名函数默认对外部类有一个强制引用，如果在页面销毁的时候没有清除掉回调，那么直到回调完毕，页面都不会被回收</li>
+<li>在静态对象中的引用：静态对象的生命周期和整个 App 的生命周期一样，这样在 App 存活期间会一直持有，导致对象无法回收</li>
+<li>通过 Map、List 等容器进行对象管理：如果容器的生命周期比较长，如果要资源不用的时候 remove 掉，否则容器会一直保持对象的引用，导致无法释放。这种情况在实现 callback 管理的时候要注意</li>
+</ul>
+</li>
+<li>内存泄露监控<br>
+通过引入 LeakCanary 和使用 Android 的 StrictMode API，可以很好的监控内存泄露情况</li>
+<li>内存泄露分析<br>
+<ul>
+<li>
+<p>dump 内存<br>
+		命令行 dump 比 IDE 稳定，推荐使用命令行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">adb shell am dumpheap &lt;process&gt; &lt;file&gt;//dump 内存到本地文件</span><br><span class="line">adb pull &lt;file&gt; &lt;local&gt;//pull 文件到本地</span><br><span class="line">hprof-conv &lt;android.hprof&gt; &lt;mat.hprof&gt;//转换 hprof 文件，hprof-conv 在 sdk 目录的 platform-tools 文件夹内</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>内存分析<br>
+使用 Android Studio 的 <a href="https://developer.android.com/studio/profile/am-hprof.html#display" target="_blank" rel="external">HPROF Viewer</a> 或 MAT 查看分析 hprof 文件， MAT 提供的功能和信息更多，MAT 建议去<a href="http://www.eclipse.org/mat/downloads.php?" target="_blank" rel="external">官网</a>下载 stand-alone 版本。</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4>渲染优化</h4>
+<ul>
+<li>
+<p>避免多次 layout</p>
+</li>
+<li>
+<p>合理使用硬件加速：硬件加速可以实现在避免重新 measure/layout 的情况下修改并更新 View，在动画运行期间对 View 开始硬件加速可以很好地提高动画性能。
+目前 View 支持硬件加速的属性有</p>
+<ul>
+<li>alpha: Changes the layer's opacity</li>
+<li>x, y, translationX, translationY: Changes the layer's position</li>
+<li>scaleX, scaleY: Changes the layer's size</li>
+<li>rotation, rotationX, rotationY: Changes the layer's orientation in 3D space</li>
+<li>pivotX, pivotY: Changes the layer's transformations origin</li>
+</ul>
+<blockquote>
+<p>PS:目前 hardware acceleration 不支持 clip(false) 操作，即如果使用 hardware acceleration 的话，超出容器范围的内容一定不会被绘制</p>
+</blockquote>
+</li>
+<li>
+<p>使用 canvas.clip() 避免非必要的更新</p>
+</li>
+<li>
+<p>减少 View Hierarchy 的层级：过大的 View Hierarchy 层级会导致每次 invalidate 产生大量的计算和 reDraw</p>
+</li>
+<li>
+<p>对不不需要的 View 可以 remove 掉或者设置 visible 为 GONE，否则视图还是会参与绘制</p>
+</li>
+<li>
+<p>使用 ViewStub 懒加载 View：部分 View 可能只有特定情况下才回出现，使用懒加载可以避免不必要的计算和内存消耗</p>
+</li>
+</ul>
+<p><a href="http://blog.udinic.com/2015/09/15/speed-up-your-app/" target="_blank" rel="external">Ref1:Speed up your app</a><br>
+<a href="https://www.youtube.com/playlist?list=PLOU2XLYxmsIKEOXh5TwZEv89aofHzNCiu" target="_blank" rel="external">Ref2:Android Performance Patterns</a><br>
+<a href="(https://developer.android.com/guide/topics/graphics/hardware-accel.html)">Ref3:Hardware Acceleration</a><br>
+<a href="https://de%3Cbr%3Eveloper.android.com/studio/profile/index.html" target="_blank" rel="external">Ref4:Profile you app</a></p>
+</div></article></div></section><footer><div class="paginator"><a href="/2017/06/03/Android-属性动画使用多个-interpolator-的-Bug-及解决方法/" class="next">NEXT</a></div><div data-thread-key="2017/06/05/Android-性能优化笔记/" data-title="Android 性能优化笔记" data-url="http://www.baitouwei.com/2017/06/05/Android-性能优化笔记/" data-author-key="1" class="ds-thread"></div><script>var duoshuoQuery = {short_name:"baitouwei"};
+(function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+     || document.getElementsByTagName('body')[0]).appendChild(ds);
+})();
+
+</script><div class="copyright"><p>© 2014 - 2017 <a href="http://www.baitouwei.com">baitouwei</a></p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//77g3ru.com1.z0.glb.clouddn.com/ga.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-53474515-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?98fa5f48921f76f2dd519a60ebb6d5ab";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>

@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.baitouwei.com/"/>
-  <updated>2017-06-03T03:26:53.000Z</updated>
+  <updated>2017-06-04T16:36:55.000Z</updated>
   <id>http://www.baitouwei.com/</id>
   
   <author>
@@ -14,6 +14,159 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Android 性能优化笔记</title>
+    <link href="http://www.baitouwei.com/2017/06/05/Android-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%AC%94%E8%AE%B0/"/>
+    <id>http://www.baitouwei.com/2017/06/05/Android-性能优化笔记/</id>
+    <published>2017-06-04T16:29:10.000Z</published>
+    <updated>2017-06-04T16:36:55.000Z</updated>
+    
+    <content type="html">&lt;h3&gt;性能优化常用工具&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Systrace：&lt;br&gt;
+通过 systrace 可对整个系统的运行状况有一个总的大体诊断
+&lt;ul&gt;
+&lt;li&gt;systrace:user atrace and frace to out an html file&lt;/li&gt;
+&lt;li&gt;atrace:andriod framework trace&lt;/li&gt;
+&lt;li&gt;ftrace:linux kernel trace&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;Traceview&lt;br&gt;
+分析代码的执行及耗时等&lt;/li&gt;
+&lt;li&gt;MAT&lt;br&gt;
+分析内存分析使用&lt;/li&gt;
+&lt;li&gt;Allocation Tracker&lt;br&gt;
+分析内存申请使用&lt;/li&gt;
+&lt;li&gt;Hierarchy Viewer&lt;br&gt;
+分析视图组成&lt;/li&gt;
+&lt;li&gt;GPU Profiling&lt;br&gt;
+分析 GPU 使用情况&lt;/li&gt;
+&lt;li&gt;Menory Profiling&lt;/li&gt;
+&lt;li&gt;Network Profiling&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;性能优化&lt;/h3&gt;
+&lt;h4&gt;多线程&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;AsyncTask：默认所有的 AsyncTask 共用同一个 SERIAL_EXECUTOR，因此每个 AsyncTask 之间是阻塞的，而且每个 AsyncTask 都是一次性的，所以 Async 比较适合执行短时间的异步任务&lt;/li&gt;
+&lt;li&gt;HanlderThread：如果需要长时间持有一个线程，可以使用 HanlderThread，&lt;/li&gt;
+&lt;li&gt;ThreadPool：适合执行大量的并行任务&lt;/li&gt;
+&lt;li&gt;IntentServer：HanlderThread 和 Server 的混合&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;使用线程的时候需要注意根据执行的任务设置 thread priority，这样有助于 CPU 进行线程调度，特别是使用 HanlderThread 的时候要注意设置 thread priority。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h4&gt;内存优化&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;避免大量频繁申请临时内存：大量申请临时内存容易引起 GC，而 GC 的时候后会导致整个系统暂停
+&lt;ul&gt;
+&lt;li&gt;注意 Autoboxing&lt;br&gt;
+Java 中 primitive 类型的数据会有 autobox，而每一次 autobox 都会生成一个新的对象。可以使用 SparseArray Family（SparseArray、SparseBooleanArray、SparseIntArray、SparseLongArray、LongSparseArray）替换 HashMap 避免 autobox，原理和 ArrayMap 类型。&lt;br&gt;
+&lt;a href=&quot;https://stackoverflow.com/questions/24836728/android-sparsearray-with-string-key&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Why don&#39;t have StringSparseArray?&lt;/a&gt;&lt;br&gt;
+&lt;a href=&quot;https://stackoverflow.com/questions/25560629/sparsearray-vs-hashmap&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;SparseArray vs HashMap&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Index vs Iterate：允许的情况下，避免使用 Iterate。&lt;br&gt;
+相对于直接使用下标定位列表，使用 Iterate 在每次循环的时候都会申请额外的临时内存。当然，只有在列表比较大的时候才需要这种优化。&lt;/li&gt;
+&lt;li&gt;使用对象池避免内存申请&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;使用 ArrayMap：&lt;br&gt;
+HashMap VS ArrayMap：
+&lt;ul&gt;
+&lt;li&gt;内存消耗：HashMap 由于采用 hash(key) 映射 table 下标，导致 table 的空间没有利用完全，而且即使 HashMap 未空的时候，也会默认为 table 默认分配一定大小，所以内存利用率会低点；而 ArrayMap 维护两个 Array（HashArray 和 KeyValueArray，两者通过 KeyIndex=(hashIndex*2)+1 进行映射），从而提高了内存使用率&lt;/li&gt;
+&lt;li&gt;扩容：HashMap 扩容的时候需要对整个列表重新进行 hash，效率比较低；而 ArrayMap 扩容的时候直接 copy 一份数据，效率比较高&lt;/li&gt;
+&lt;li&gt;查找：HashMap 由于采用 hash 映射，所以查找效率较高；而 ArrayMap 本质上使用时二分搜索进行查找，效率相对低点&lt;/li&gt;
+&lt;li&gt;删除：HashMap 使用 hash 映射或链表操作删除元素，效率较高；ArrayMap 删除元素的时候需要对整个数组进行分段 copy 效率较低
+ArrayMap 相对于 HashMap 使用运行效率换取内存空间，一般来说大小 1k 以内都执行效率的影响看忽略不计。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;避免 Enums：&lt;br&gt;
+每个 Enums 本质上都是一个 final class，所以占用的内存会比直接使用 int 多，如果可以使用 int + annotation 来实现的话，就没必要使用 Enums&lt;/li&gt;
+&lt;li&gt;避免内存泄露
+&lt;ul&gt;
+&lt;li&gt;内存泄露常见场景
+&lt;ul&gt;
+&lt;li&gt;异步回调：比如匿名函数默认对外部类有一个强制引用，如果在页面销毁的时候没有清除掉回调，那么直到回调完毕，页面都不会被回收&lt;/li&gt;
+&lt;li&gt;在静态对象中的引用：静态对象的生命周期和整个 App 的生命周期一样，这样在 App 存活期间会一直持有，导致对象无法回收&lt;/li&gt;
+&lt;li&gt;通过 Map、List 等容器进行对象管理：如果容器的生命周期比较长，如果要资源不用的时候 remove 掉，否则容器会一直保持对象的引用，导致无法释放。这种情况在实现 callback 管理的时候要注意&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;内存泄露监控&lt;br&gt;
+通过引入 LeakCanary 和使用 Android 的 StrictMode API，可以很好的监控内存泄露情况&lt;/li&gt;
+&lt;li&gt;内存泄露分析&lt;br&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;dump 内存&lt;br&gt;
+		命令行 dump 比 IDE 稳定，推荐使用命令行&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;adb shell am dumpheap &amp;lt;process&amp;gt; &amp;lt;file&amp;gt;//dump 内存到本地文件&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;adb pull &amp;lt;file&amp;gt; &amp;lt;local&amp;gt;//pull 文件到本地&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;hprof-conv &amp;lt;android.hprof&amp;gt; &amp;lt;mat.hprof&amp;gt;//转换 hprof 文件，hprof-conv 在 sdk 目录的 platform-tools 文件夹内&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;内存分析&lt;br&gt;
+使用 Android Studio 的 &lt;a href=&quot;https://developer.android.com/studio/profile/am-hprof.html#display&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;HPROF Viewer&lt;/a&gt; 或 MAT 查看分析 hprof 文件， MAT 提供的功能和信息更多，MAT 建议去&lt;a href=&quot;http://www.eclipse.org/mat/downloads.php?&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;官网&lt;/a&gt;下载 stand-alone 版本。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;渲染优化&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;避免多次 layout&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;合理使用硬件加速：硬件加速可以实现在避免重新 measure/layout 的情况下修改并更新 View，在动画运行期间对 View 开始硬件加速可以很好地提高动画性能。
+目前 View 支持硬件加速的属性有&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;alpha: Changes the layer&#39;s opacity&lt;/li&gt;
+&lt;li&gt;x, y, translationX, translationY: Changes the layer&#39;s position&lt;/li&gt;
+&lt;li&gt;scaleX, scaleY: Changes the layer&#39;s size&lt;/li&gt;
+&lt;li&gt;rotation, rotationX, rotationY: Changes the layer&#39;s orientation in 3D space&lt;/li&gt;
+&lt;li&gt;pivotX, pivotY: Changes the layer&#39;s transformations origin&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;PS:目前 hardware acceleration 不支持 clip(false) 操作，即如果使用 hardware acceleration 的话，超出容器范围的内容一定不会被绘制&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;使用 canvas.clip() 避免非必要的更新&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;减少 View Hierarchy 的层级：过大的 View Hierarchy 层级会导致每次 invalidate 产生大量的计算和 reDraw&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;对不不需要的 View 可以 remove 掉或者设置 visible 为 GONE，否则视图还是会参与绘制&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;使用 ViewStub 懒加载 View：部分 View 可能只有特定情况下才回出现，使用懒加载可以避免不必要的计算和内存消耗&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;a href=&quot;http://blog.udinic.com/2015/09/15/speed-up-your-app/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Ref1:Speed up your app&lt;/a&gt;&lt;br&gt;
+&lt;a href=&quot;https://www.youtube.com/playlist?list=PLOU2XLYxmsIKEOXh5TwZEv89aofHzNCiu&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Ref2:Android Performance Patterns&lt;/a&gt;&lt;br&gt;
+&lt;a href=&quot;(https://developer.android.com/guide/topics/graphics/hardware-accel.html)&quot;&gt;Ref3:Hardware Acceleration&lt;/a&gt;&lt;br&gt;
+&lt;a href=&quot;https://de%3Cbr%3Eveloper.android.com/studio/profile/index.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Ref4:Profile you app&lt;/a&gt;&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;h3&gt;性能优化常用工具&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Systrace：&lt;br&gt;
+通过 systrace 可对整个系统的运行状况有一个总的大体诊断
+&lt;ul&gt;
+&lt;li&gt;systrace:user atrace and frace to out an html file&lt;/li&gt;
+&lt;li&gt;atrace:andriod framework trace&lt;/li&gt;
+&lt;li&gt;ftrace:linux kernel trace&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+    
+  </entry>
   
   <entry>
     <title>Android 属性动画使用多个 interpolator 的 Bug 及解决方法</title>
