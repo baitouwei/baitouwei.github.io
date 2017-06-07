@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.baitouwei.com/"/>
-  <updated>2017-06-04T16:36:55.000Z</updated>
+  <updated>2017-06-07T15:56:17.000Z</updated>
   <id>http://www.baitouwei.com/</id>
   
   <author>
@@ -16,11 +16,51 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>WeakHashMap 注意事项</title>
+    <link href="http://www.baitouwei.com/2017/06/07/WeakHashMap-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9/"/>
+    <id>http://www.baitouwei.com/2017/06/07/WeakHashMap-注意事项/</id>
+    <published>2017-06-07T15:52:39.000Z</published>
+    <updated>2017-06-07T15:56:17.000Z</updated>
+    
+    <content type="html">&lt;h3&gt;WeakHashMap 原理&lt;/h3&gt;
+&lt;p&gt;WeakHashMap 对 key 持有一个 WeakReference，对 value 持有一个 StrongReference，key 的 WeakReference 会和一个 ReferenceQueue 相关联，当没有 StrongReference 指向对应的 key 时，key 会在系统 GC 的时候被回收，同时对应的 Entry 会记录在 ReferenceQueue 中，稍后程序会在适当的时机(即 WeakHashMap 发生读写操作的时候)遍历整个 ReferenceQueue 来去除 value 的 StrongReference，以便系统回收 value 的内存。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;comment&quot;&gt;//Android Api 25 WeakHashMap.java&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;class&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;WeakHashMap&lt;/span&gt;&amp;lt;&lt;span class=&quot;title&quot;&gt;K&lt;/span&gt;,&lt;span class=&quot;title&quot;&gt;V&lt;/span&gt;&amp;gt; &lt;span class=&quot;keyword&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;AbstractMap&lt;/span&gt;&amp;lt;&lt;span class=&quot;title&quot;&gt;K&lt;/span&gt;,&lt;span class=&quot;title&quot;&gt;V&lt;/span&gt;&amp;gt; &lt;span class=&quot;keyword&quot;&gt;implements&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;Map&lt;/span&gt;&amp;lt;&lt;span class=&quot;title&quot;&gt;K&lt;/span&gt;,&lt;span class=&quot;title&quot;&gt;V&lt;/span&gt;&amp;gt; &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;//Entry 继承自 WeakReference，在构造函数中对 key 持有一个 WeakReference，同时使用 queue 监控引用&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;class&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;Entry&lt;/span&gt;&amp;lt;&lt;span class=&quot;title&quot;&gt;K&lt;/span&gt;,&lt;span class=&quot;title&quot;&gt;V&lt;/span&gt;&amp;gt; &lt;span class=&quot;keyword&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;WeakReference&lt;/span&gt;&amp;lt;&lt;span class=&quot;title&quot;&gt;Object&lt;/span&gt;&amp;gt; &lt;span class=&quot;keyword&quot;&gt;implements&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;Map&lt;/span&gt;.&lt;span class=&quot;title&quot;&gt;Entry&lt;/span&gt;&amp;lt;&lt;span class=&quot;title&quot;&gt;K&lt;/span&gt;,&lt;span class=&quot;title&quot;&gt;V&lt;/span&gt;&amp;gt; &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      V value;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; hash;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      Entry&amp;lt;K,V&amp;gt; next;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      Entry(Object key, V value,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            ReferenceQueue&amp;lt;Object&amp;gt; queue,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; hash, Entry&amp;lt;K,V&amp;gt; next) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          &lt;span class=&quot;keyword&quot;&gt;super&lt;/span&gt;(key, queue);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          &lt;span class=&quot;keyword&quot;&gt;this&lt;/span&gt;.value = value;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          &lt;span class=&quot;keyword&quot;&gt;this&lt;/span&gt;.hash  = hash;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          &lt;span class=&quot;keyword&quot;&gt;this&lt;/span&gt;.next  = next;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      ...&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;//这个方法遍历 ReferenceQueue 并清楚 value 的引用，代码中有多个地方调用&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;expungeStaleEntries&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; (Object x; (x = queue.poll()) != &lt;span class=&quot;keyword&quot;&gt;null&lt;/span&gt;; ) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      ...&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;所以在使用 WeakHashMap 的过程中需要注意，value 的引用是 StrongReference，&lt;strong&gt;只有当 key 没有 StrongReference&lt;/strong&gt;，系统才回自动回收 value 的内存。&lt;/p&gt;
+&lt;h3&gt;常见使用场景&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;当需要为某个对象新增一些新的属性，但是又不想通过继承实现。这个时候可以使用 WeakHashMap，key 为该对象，value 为新增的属性，这样做的好处是当对象没有强引用的时候，对应的属性会被自动回收，避免了内存泄露。
+实例：Android Api 25 SQLiteConnectionPool.java 中的 mAcquiredConnections&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;不推荐&lt;/strong&gt; 使用 WeakHashMap 来管理 listeners，平时在管理 listener 的时候，通常在 registerXXXListener() 之后，需要在合适的实际调用 unRegisterXXXListener()，以防内存泄露，如果通过 Collections.newSetFromMap(weakHashMap) 新建一个 WeakHashSet，再来管理 listener 的话，可以免去手动 unRegister。&lt;strong&gt;但是需要注意的是，如果 registerXXXListener() 传入的是匿名函数的话，由于没有强引用，listener 会很容易被回收，所以这种方式不推荐使用&lt;/strong&gt;。
+实例：Android Api 25 SharedPreferencesImpl.java 中的 mListeners&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;不推荐&lt;/strong&gt; 网上有种观点是可以利用 WeakHashMap 的自动回收来做缓存，其实这是不可取的。因为：
+&lt;ul&gt;
+&lt;li&gt;由于 WeakHashMap 依赖 WeakReference 实现，而 WeakReference 在 Minor GC 的时候就可以回收了，所以如果用 WeakHashMap 来做缓存的话，会发现缓存经常失效。&lt;/li&gt;
+&lt;li&gt;当 Key 不存在 StrongReference 的时候，value 就可能会被回收，这和实际应用场景不符，即使不存在引用，缓存也不应当失效，缓存失效应当由一定的逻辑在判断，而如果使用 WeakHashMap 的话，缓存的失效是有引用决定的，这样不利用提高缓存命中率。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;a href=&quot;https://stackoverflow.com/questions/154724/when-would-you-use-a-weakhashmap-or-a-weakreference&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Ref1&lt;/a&gt;&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;h3&gt;WeakHashMap 原理&lt;/h3&gt;
+&lt;p&gt;WeakHashMap 对 key 持有一个 WeakReference，对 value 持有一个 StrongReference，key 的 WeakReference 会和一个 ReferenceQueue 相关联，当没有 StrongReference 指向对应的 key 时，key 会在系统 GC 的时候被回收，同时对应的 Entry 会记录在 ReferenceQueue 中，稍后程序会在适当的时机(即 WeakHashMap 发生读写操作的时候)遍历整个 ReferenceQueue 来去除 value 的 StrongReference，以便系统回收 value 的内存。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java Collections" scheme="http://www.baitouwei.com/tags/Java-Collections/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Android 性能优化笔记</title>
     <link href="http://www.baitouwei.com/2017/06/05/Android-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%AC%94%E8%AE%B0/"/>
     <id>http://www.baitouwei.com/2017/06/05/Android-性能优化笔记/</id>
     <published>2017-06-04T16:29:10.000Z</published>
-    <updated>2017-06-04T16:36:55.000Z</updated>
+    <updated>2017-06-07T15:57:02.000Z</updated>
     
     <content type="html">&lt;h3&gt;性能优化常用工具&lt;/h3&gt;
 &lt;ul&gt;
@@ -165,6 +205,8 @@ ArrayMap 相对于 HashMap 使用运行效率换取内存空间，一般来说�
     
     </summary>
     
+    
+      <category term="Android Performance" scheme="http://www.baitouwei.com/tags/Android-Performance/"/>
     
   </entry>
   
