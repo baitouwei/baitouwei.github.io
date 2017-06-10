@@ -59,14 +59,12 @@
 <li>当然还要可以自定义 Header 和 Footer，这里主要是把当前 ASwipeRefresh 滑动的 percent 和 status 传递过去。</li>
 </ul>
 <p>除此之外，我还把是否可以进行刷新通过回调 <code>isReadyToRefresh</code> 和 <code>isReadyToLoadMore</code> 暴露出来，这样就可以自定义滑动到什么位置才进行刷新。不过现在这个控件还是有缺点的，自动刷新那里处理的不是很好，由于不能缺点一个 View 什么时候已经 ready，所以找不到合适的位置去自动调用下拉刷新，现在的作法通过延时来实现，但其实很不好，无法保证能自动下拉成功，所以要实现自动下拉刷新的话，建议在外部合适的位置手动调用 <code>refreshStart</code></p>
-</div></article></div></section><footer><div class="paginator"><a href="/2016/04/07/Android-系统启动流程/" class="prev">PREV</a><a href="/2015/01/08/okio/" class="next">NEXT</a></div><div data-thread-key="2015/11/13/ASwipeRefresh/" data-title="ASwipeRefresh" data-url="http://www.baitouwei.com/2015/11/13/ASwipeRefresh/" data-author-key="1" class="ds-thread"></div><script>var duoshuoQuery = {short_name:"baitouwei"};
+</div></article></div></section><footer><div class="paginator"><a href="/2016/04/07/Android-系统启动流程/" class="prev">PREV</a><a href="/2015/01/08/okio/" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'baitouwei';
+var disqus_identifier = '2015/11/13/ASwipeRefresh/';
+var disqus_title = 'ASwipeRefresh';
+var disqus_url = 'http://www.baitouwei.com/2015/11/13/ASwipeRefresh/';
 (function() {
-    var ds = document.createElement('script');
-    ds.type = 'text/javascript';ds.async = true;
-    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-    ds.charset = 'UTF-8';
-    (document.getElementsByTagName('head')[0] 
-     || document.getElementsByTagName('body')[0]).appendChild(ds);
-})();
-
-</script><div class="copyright"><p>© 2014 - 2017 <a href="http://www.baitouwei.com">baitouwei</a></p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//77g3ru.com1.z0.glb.clouddn.com/ga.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-53474515-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?98fa5f48921f76f2dd519a60ebb6d5ab";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//baitouwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2014 - 2017 <a href="http://www.baitouwei.com">baitouwei</a></p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//77g3ru.com1.z0.glb.clouddn.com/ga.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-53474515-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?98fa5f48921f76f2dd519a60ebb6d5ab";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
