@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Android Handler 机制 · baitouwei</title><meta name="description" content="Android Handler 机制 - baitouwei"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.ico"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="http://weibo.com/baitouwei" target="_blank" class="nav-list-link">WEIBO</a></li><li class="nav-list-item"><a href="https://github.com/baitouwei" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">Android Handler 机制</h1><div class="post-time">Jun 26, 2017</div><div class="post-content"><h3>相关构件</h3>
+<p>MessageQueue 是消息队列，Handler 即消费者(handler.postXXX() 或 handler.sendXXX())，也是生产者(handler.handleMessage())，Looper 负责初始化整个消息队列</p>
+<a id="more"></a>
+<ul>
+<li>
+<p>MessageQueue
+由 Message 构成的单向链表队列，当没有消息需要 dispatch 的时候，即停止循环 deQueue</p>
+</li>
+<li>
+<p>Message
+可分成三中类型的数据：<br></p>
+<ul>
+<li>barrier message：用于阻塞同步消息，Message 可以通过 flags 标识为 asynchronous 或 synchronous 消息，barrier 消息之后的所有 synchronous 都会被阻塞，而 asynchronous 则不受影响(barrier message 的 target 为 null)</li>
+<li>callback message：不带参数，仅带一个 callback 回调消息</li>
+<li>what message：带参数消息，可以通过 what，data，arg1，arg2，obj带参数</li>
+</ul>
+<p>其他：<br></p>
+<ul>
+<li>通过 message pool 管理 message 的回收和分配</li>
+<li>FLAG_IN_USE：当 Message 入队(enqueued)或分发(delivered)或被回收到 Message Pool 的时候，flag 都是设置为 true；该 flag 只可以在 Message 初始化生成的时候被清除掉。<br>
+使用场景：在 Message 的 recycle() 方法中，通过 isInUse() 防止回收正在 enqueued 或 delivered 的 message，同时回收后的 message 会被设置了 IN_USE，防止重复回收已回收的 message</li>
+<li>when：消息应当被分发的时间，可以通过设置该值实现 delay message</li>
+</ul>
+</li>
+<li>
+<p>Looper
+通过 ThreadLocal 模式，为每个线程配置唯一的一个 MessageQueue，提供 loop() 方法启动消息循环，quit() 方法结束消息循环</p>
+</li>
+<li>
+<p>Handler
+通过持有的 MessageQueue 进行消息收发</p>
+</li>
+</ul>
+<h3>消息发送接受流程</h3>
+<p><img src="/image/handler_flowchart.png" alt="handler flowchart.png"></p>
+</div></article></div></section><footer><div class="paginator"><a href="/2017/06/07/WeakHashMap-注意事项/" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'baitouwei';
+var disqus_identifier = '2017/06/26/Android-Handler-机制/';
+var disqus_title = 'Android Handler 机制';
+var disqus_url = 'http://www.baitouwei.com/2017/06/26/Android-Handler-机制/';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//baitouwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2014 - 2017 <a href="http://www.baitouwei.com">baitouwei</a></p></div></footer><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//77g3ru.com1.z0.glb.clouddn.com/ga.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-53474515-1",'auto');ga('send','pageview');</script><script>var _hmt = _hmt || [];(function() {var hm = document.createElement("script");hm.src = "//hm.baidu.com/hm.js?98fa5f48921f76f2dd519a60ebb6d5ab";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s);})();</script><script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>

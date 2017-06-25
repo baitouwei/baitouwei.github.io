@@ -60,6 +60,8 @@ ArrayMap 相对于 HashMap 使用运行效率换取内存空间，一般来说�
 </li>
 <li>避免 Enums：<br>
 每个 Enums 本质上都是一个 final class，所以占用的内存会比直接使用 int 多，如果可以使用 int + annotation 来实现的话，就没必要使用 Enums</li>
+<li>使用 void onTrimMemory(int level) 回调：<br>
+onTrimMemory 会在系统需要回收内存前回调给程序，可以在这里做一些 Cache 的回收操作</li>
 <li>避免内存泄露
 <ul>
 <li>内存泄露常见场景
@@ -119,10 +121,15 @@ ArrayMap 相对于 HashMap 使用运行效率换取内存空间，一般来说�
 <p>使用 ViewStub 懒加载 View：部分 View 可能只有特定情况下才回出现，使用懒加载可以避免不必要的计算和内存消耗</p>
 </li>
 </ul>
+<h4>其他</h4>
+<ul>
+<li>使用 SQLite transaction 和 yielded</li>
+</ul>
 <p><a href="http://blog.udinic.com/2015/09/15/speed-up-your-app/" target="_blank" rel="external">Ref1:Speed up your app</a><br>
 <a href="https://www.youtube.com/playlist?list=PLOU2XLYxmsIKEOXh5TwZEv89aofHzNCiu" target="_blank" rel="external">Ref2:Android Performance Patterns</a><br>
 <a href="(https://developer.android.com/guide/topics/graphics/hardware-accel.html)">Ref3:Hardware Acceleration</a><br>
-<a href="https://de%3Cbr%3Eveloper.android.com/studio/profile/index.html" target="_blank" rel="external">Ref4:Profile you app</a></p>
+<a href="https://de%3Cbr%3Eveloper.android.com/studio/profile/index.html" target="_blank" rel="external">Ref4:Profile you app</a><br>
+<a href="https://www.youtube.com/watch?v=gbQb1PVjfqM&amp;list=PL56D792A831D0C362&amp;index=17" target="_blank" rel="external">Ref5:Google I/O 2012 - Doing More With Less: Being a Good Android Citizen</a></p>
 </div></article></div></section><footer><div class="paginator"><a href="/2017/06/07/WeakHashMap-注意事项/" class="prev">PREV</a><a href="/2017/06/03/Android-属性动画使用多个-interpolator-的-Bug-及解决方法/" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'baitouwei';
 var disqus_identifier = '2017/06/05/Android-性能优化笔记/';
 var disqus_title = 'Android 性能优化笔记';
